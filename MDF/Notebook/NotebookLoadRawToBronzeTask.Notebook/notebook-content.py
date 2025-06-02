@@ -9,6 +9,22 @@
 # META   "dependencies": {}
 # META }
 
+# PARAMETERS CELL ********************
+
+# This cell is generated from runtime parameters. Learn more: https://go.microsoft.com/fwlink/?linkid=2161015
+TaskKey = 9
+TaskList = "{\"JobAuditKey\":154,\"TaskKey\":9,\"TaskType\":\"DatabaseTask\",\"SourceName\":\"Database\",\"SourceType\":\"sqlserver\",\"SourceDatabaseName\":\"SQLServer CrimsonX - Prod\",\"SourceSchemaName\":\"dbo\",\"SourceTableName\":\"FundTradeType\",\"PrimaryKeyColumnList\":\"\",\"RawStoragePath\":\"CrimsonX\",\"RawStorageFileName\":\"FundTradeType\",\"ArchiveOriginalFilesFlag\":true,\"ArchiveStoragePath\":null,\"ArchiveStorageFileName\":\"FundTradeType\",\"BronzeWorkspaceName\":\"Dev - Crimson\",\"BronzeLakehouseName\":\"lh_bronze\",\"BronzeSchemaName\":\"Bronze\",\"BronzeTableName\":\"CrimsonXFundTradeType\",\"BronzeLoadMethod\":\"overwrite\",\"BronzeWorkspaceId\":null,\"BronzeLakehouseId\":null,\"WatermarkColumn\":\"ETLLoadDateTime\",\"SinkTableName\":\"CrimsonXFundTradeType\",\"SinkSchemaName\":\"Bronze\",\"SinkWatermarkColumn\":\"ETLLoadDateTime\",\"SinkLoadMethod\":\"overwrite\",\"IsWatermarkEnabledFlag\":false}"
+GlobalConfig = "[{\"ConfigKey\":\"SPJobAuditStartLock\",\"ConfigValue\":\"0\"},{\"ConfigKey\":\"CuratedLakehouseId\",\"ConfigValue\":\"e9fc4e80-ff69-4d45-bbdd-892592889465\"},{\"ConfigKey\":\"BronzeLakehouseId\",\"ConfigValue\":\"13ef97da-5da2-466d-8c5f-2a70572c6558\"},{\"ConfigKey\":\"Dev - Crimson\",\"ConfigValue\":\"33535eb8-4d07-49bc-b3a5-cc91d3aa6ced\"},{\"ConfigKey\":\"RawLakehouseId\",\"ConfigValue\":\"920a12cc-7104-4013-a2a3-d7baa57e9e3f\"}]"
+
+
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
 # CELL ********************
 
 # ---------------------------------------------------------------------------
@@ -55,9 +71,9 @@ spark.conf.set("spark.databricks.delta.schema.autoMerge.enabled", "true")
 
 # CELL ********************
 
-TaskList = ''
-WatermarkList = ''
-GlobalConfig = ''
+#TaskList = ''
+#WatermarkList = ''
+#GlobalConfig = ''
 
 # METADATA ********************
 
@@ -68,6 +84,7 @@ GlobalConfig = ''
 
 # CELL ********************
 
+print(TaskList)
 # Convert JSON String to list
 tasklist = [json.loads(TaskList)]
 # watermarklist = json.loads(WatermarkList)

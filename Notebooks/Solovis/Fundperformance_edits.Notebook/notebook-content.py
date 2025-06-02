@@ -59,8 +59,10 @@ spark.sql("SET spark.sql.caseSensitive = TRUE")
                                                        
 #display(df)
 #spark.sql("Insert into lh_curated.Silver.FundPerformance select FundPerformanceId,FundId,ClassificationId,AsOfDate,NAVDate,MarketValueLocal,MarketValueUSD,LastValuationAmountLocal,LastValuationAmountUSD,LastValuationDate,LastValuationNAVDate,PercentOfGIA from LakehouseSilver.FundPerformance")
-spark.sql("delete from lh_curated.Silver.FundPerformance where FundId = '91f3bc78-cf8d-4f09-8f6e-91dbd9a5da0a'")
-spark.sql("Insert into lh_curated.Silver.FundPerformance values (595080,'91f3bc78-cf8d-4f09-8f6e-91dbd9a5da0a',275,NULL,DATE('2025-06-30'),DATE('2025-06-30'),6354180,6354180,5047211,5047211,DATE('12/20/2024'),DATE('12/31/2024'),0.000104,NULL,NULL,NULL)")			
+#spark.sql("delete from lh_curated.Silver.FundPerformance where FundId = '91f3bc78-cf8d-4f09-8f6e-91dbd9a5da0a'")
+#spark.sql("Insert into lh_curated.Silver.FundPerformance values (595080,'91f3bc78-cf8d-4f09-8f6e-91dbd9a5da0a',275,NULL,DATE('2025-06-30'),DATE('2025-06-30'),6354180,6354180,5047211,5047211,DATE('12/20/2024'),DATE('12/31/2024'),0.000104,NULL,NULL,NULL)")			
+spark.sql("update lh_curated.Silver.FundPerformance set NAVDate =DATE('2025-06-30')")
+
 
 # spark.sql("update lh_curated.Silver.FundPerformance set FundId = 'e46fbfe3-44a3-4088-9665-24f90d04f1ff'  where FundId ='212910D9-FD25-4769-90F0-7C8DBE44CAF6'")
 #spark.sql("update lh_bronze.bronze.CrimsonXFundTrade set FundId = 'e46fbfe3-44a3-4088-9665-24f90d04f1ff'  where FundId ='212910D9-FD25-4769-90F0-7C8DBE44CAF6'")
@@ -235,7 +237,7 @@ spark.sql("SET spark.sql.caseSensitive = TRUE")
 # -----------
 # Calculate Moveforward delta
                                   
-df =  spark.sql("""WITH other_funds as(SELECT FundName,f.FundId,ft.CurrencyId,
+df =  spark.sql("""WITH other_funds as(SELECT FundName,upper(f.FundId) as FundId,ft.CurrencyId,
                                         CASE WHEN FundName != 'HMC Internal - House' THEN (SUM(ftf.Amount * c.CurrencyRate))
                                         END AS MVForwardDelta
                                         FROM lh_bronze.Bronze.CrimsonXFundTrade ft
@@ -247,7 +249,7 @@ df =  spark.sql("""WITH other_funds as(SELECT FundName,f.FundId,ft.CurrencyId,
                   tempcalc as(
                                         SELECT SUM(oft.MVForwardDelta) mvother FROM other_funds oft)  ,
                   hmcinternal as(
-                                        SELECT FundName ,f.FundId,ft.CurrencyId,
+                                        SELECT FundName ,upper(f.FundId) as FundId,ft.CurrencyId,
                                         CASE WHEN SUM(tc.mvother) > 0 THEN  -(SUM(ftf.Amount * c.CurrencyRate)) --there needs to be currency conversion
                                         END AS MVForwardDelta
                                         FROM lh_bronze.Bronze.CrimsonXFundTrade ft
