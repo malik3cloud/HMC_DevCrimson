@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "CrimsonXOrchestration"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "41db61b1-e701-9a93-463a-2c80c5b80dca"
+  }
+}
