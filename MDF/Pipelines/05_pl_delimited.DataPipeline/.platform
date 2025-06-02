@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "05_pl_delimited"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "9ab50a5d-2a8a-92a2-4bf4-5984f3f7a871"
+  }
+}

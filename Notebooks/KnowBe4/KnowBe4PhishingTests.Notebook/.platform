@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "KnowBe4PhishingTests",
+    "description": "Gets all phishing tests from KnowBe4"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "0400fe91-82e2-8a32-482a-4ccfa134efb2"
+  }
+}

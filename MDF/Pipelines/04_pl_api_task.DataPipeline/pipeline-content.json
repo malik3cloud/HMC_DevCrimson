@@ -1,0 +1,665 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[etl].[GetApiTaskInfo]",
+            "storedProcedureParameters": {
+              "TaskAuditKey": {
+                "type": "Int64",
+                "value": {
+                  "value": "@pipeline().parameters.TaskAuditKey",
+                  "type": "Expression"
+                }
+              },
+              "TaskKey": {
+                "type": "Int32",
+                "value": {
+                  "value": "@pipeline().parameters.TaskKey",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "GetApiTaskInfo",
+        "description": "This returns file-specific information, including the source path and file format.",
+        "dependsOn": []
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[etl].[GetApiTaskNotebooks]",
+            "storedProcedureParameters": {
+              "TaskKey": {
+                "type": "Int32",
+                "value": {
+                  "value": "@pipeline().parameters.TaskKey",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "GetTaskNotebooks",
+        "description": "There can be one or more notebooks to execute for a given task. The primary notebook to run will be one to load Raw to Bronze and convert to Delta Lake. Other notebooks can perform other actions such as schematization, handle deletions, create Databricks delta tables or views.",
+        "dependsOn": [
+          {
+            "activity": "GetApiTaskInfo",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "isSequential": true,
+          "items": {
+            "value": "@activity('GetTaskNotebooks').output.value",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "TridentNotebook",
+              "typeProperties": {
+                "notebookId": {
+                  "value": "@item().NotebookId",
+                  "type": "Expression"
+                },
+                "workspaceId": {
+                  "value": "@pipeline().DataFactory",
+                  "type": "Expression"
+                },
+                "parameters": {
+                  "JobAuditKey": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.JobAuditKey",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "TaskKey": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.TaskKey",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "TaskType": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.TaskType",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "ParentSourceName": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.ParentSourceName",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "SourceName": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.SourceName",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "ApiTaskName": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.ApiTaskName",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "PrimaryKeyColumnList": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.PrimaryKeyColumnList",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "IsWatermarkEnabledFlag": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.IsWatermarkEnabledFlag",
+                      "type": "Expression"
+                    },
+                    "type": "bool"
+                  },
+                  "HighWatermarkValue": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.HighWatermarkValue",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "RawStoragePath": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.RawStoragePath",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "RawStorageFileName": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.RawStorageFileName",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "BronzeWorkspaceName": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.BronzeWorkspaceName",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "BronzeLakehouseName": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.BronzeLakehouseName",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "BronzeSchemaName": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.BronzeSchemaName",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "BronzeTableName": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.BronzeTableName",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "BronzeLoadMethod": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.BronzeLoadMethod",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "EtlLoadDateTime": {
+                    "value": {
+                      "value": "@pipeline().parameters.EtlLoadDateTime",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "BronzeWorkspaceId": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.BronzeWorkspaceId",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "BronzeLakehouseId": {
+                    "value": {
+                      "value": "@activity('GetApiTaskInfo').output.firstRow.BronzeLakehouseId",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "TaskAuditKey": {
+                    "value": {
+                      "value": "@pipeline().parameters.TaskAuditKey",
+                      "type": "Expression"
+                    },
+                    "type": "int"
+                  }
+                },
+                "sessionTag": {
+                  "value": "@activity('GetApiTaskInfo').output.firstRow.SourceName",
+                  "type": "Expression"
+                }
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "RunApiTaskNotebook",
+              "description": "Executes notebook using notebook id",
+              "dependsOn": []
+            },
+            {
+              "type": "SqlServerStoredProcedure",
+              "typeProperties": {
+                "storedProcedureName": "[etl].[LogMessage]",
+                "storedProcedureParameters": {
+                  "JobAuditKey": {
+                    "value": null,
+                    "type": "Int64"
+                  },
+                  "Message": {
+                    "value": {
+                      "value": "@concat('Sucessful Notebook Run URL: https://app.powerbi.com/'\n    , activity('RunApiTaskNotebook').output.SparkMonitoringURL)",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "PipelineRunID": {
+                    "value": {
+                      "value": "@pipeline().RunId",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "TaskAuditKey": {
+                    "value": {
+                      "value": "@pipeline().parameters.TaskAuditKey",
+                      "type": "Expression"
+                    },
+                    "type": "Int64"
+                  }
+                }
+              },
+              "linkedService": {
+                "name": "etlControl",
+                "properties": {
+                  "type": "DataWarehouse",
+                  "typeProperties": {
+                    "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                    "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                    "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                  },
+                  "annotations": []
+                }
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 2,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "LogNotebookRun",
+              "dependsOn": [
+                {
+                  "activity": "pl_load_raw_to_bronze",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "ExecutePipeline",
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "d27342c0-58ae-b5f6-44da-7109b0b8bc03",
+                  "type": "PipelineReference"
+                },
+                "parameters": {
+                  "TaskAuditKey": {
+                    "value": "@pipeline().parameters.TaskAuditKey",
+                    "type": "Expression"
+                  },
+                  "ErrorMessage": {
+                    "value": "@if(variables('varRunPageUrlExists'),\nconcat('Notebook Run URL: https://app.powerbi.com/'\n    ,activity('RunApiTaskNotebook').output.SparkMonitoringURL\n    , ' - Notebook Error: '\n    , activity('RunApiTaskNotebook').output.result.error.ename\n    , ': '\n    , activity('RunApiTaskNotebook').output.result.error.evalue\n),\nactivity('RunApiTaskNotebook').Error.message)",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true
+              },
+              "policy": {
+                "secureInput": false
+              },
+              "name": "pl_fail_task_ApiTaskNotebook",
+              "dependsOn": [
+                {
+                  "activity": "SetRunPageURLExists",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "SetVariable",
+              "typeProperties": {
+                "variableName": "varRunPageUrlExists",
+                "value": {
+                  "value": "@contains(activity('RunApiTaskNotebook').output,'SparkMonitoringURL')",
+                  "type": "Expression"
+                }
+              },
+              "policy": {
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "SetRunPageURLExists",
+              "dependsOn": [
+                {
+                  "activity": "RunApiTaskNotebook",
+                  "dependencyConditions": [
+                    "Failed"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "SqlServerStoredProcedure",
+              "typeProperties": {
+                "storedProcedureName": "[etl].[TaskAuditExecutionUpdate]",
+                "storedProcedureParameters": {
+                  "IsPartitionFlag": {
+                    "value": null,
+                    "type": "Boolean"
+                  },
+                  "RowsCopied": {
+                    "value": {
+                      "value": "@activity('pl_load_raw_to_bronze').output.pipelineReturnValue.RowsCopied",
+                      "type": "Expression"
+                    },
+                    "type": "Int64"
+                  },
+                  "RowsDeleted": {
+                    "value": {
+                      "value": "@activity('pl_load_raw_to_bronze').output.pipelineReturnValue.RowsDeleted",
+                      "type": "Expression"
+                    },
+                    "type": "Int64"
+                  },
+                  "RowsInserted": {
+                    "value": {
+                      "value": "@activity('pl_load_raw_to_bronze').output.pipelineReturnValue.RowsInserted",
+                      "type": "Expression"
+                    },
+                    "type": "Int64"
+                  },
+                  "RowsRead": {
+                    "value": {
+                      "value": "@json(activity('RunApiTaskNotebook').output.result.exitValue).RowsRead",
+                      "type": "Expression"
+                    },
+                    "type": "Int64"
+                  },
+                  "RowsSkipped": {
+                    "value": null,
+                    "type": "Int64"
+                  },
+                  "RowsUpdated": {
+                    "value": {
+                      "value": "@activity('pl_load_raw_to_bronze').output.pipelineReturnValue.RowsUpdated",
+                      "type": "Expression"
+                    },
+                    "type": "Int64"
+                  },
+                  "TaskAuditKey": {
+                    "value": {
+                      "value": "@pipeline().parameters.TaskAuditKey",
+                      "type": "Expression"
+                    },
+                    "type": "Int64"
+                  }
+                }
+              },
+              "linkedService": {
+                "name": "etlControl",
+                "properties": {
+                  "type": "DataWarehouse",
+                  "typeProperties": {
+                    "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                    "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                    "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                  },
+                  "annotations": []
+                }
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 30,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "TaskAuditExecutionUpdate",
+              "dependsOn": [
+                {
+                  "activity": "pl_load_raw_to_bronze",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "ExecutePipeline",
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "f0f37905-6dab-a9c6-412a-39ec5f42cfbc",
+                  "type": "PipelineReference"
+                },
+                "parameters": {
+                  "TaskAuditKey": {
+                    "value": "@pipeline().parameters.TaskAuditKey",
+                    "type": "Expression"
+                  },
+                  "EtlSource": {
+                    "value": "@activity('GetApiTaskInfo').output.firstRow.SourceName",
+                    "type": "Expression"
+                  },
+                  "EtlLoadDateTime": {
+                    "value": "@pipeline().parameters.EtlLoadDateTime",
+                    "type": "Expression"
+                  },
+                  "BronzeWorkspaceName": {
+                    "value": "@activity('GetApiTaskInfo').output.firstRow.BronzeWorkspaceName",
+                    "type": "Expression"
+                  },
+                  "BronzeLakehouseName": {
+                    "value": "@activity('GetApiTaskInfo').output.firstRow.BronzeLakehouseName",
+                    "type": "Expression"
+                  },
+                  "RawStoragePath": {
+                    "value": "@activity('GetApiTaskInfo').output.firstRow.RawStoragePath",
+                    "type": "Expression"
+                  },
+                  "RawStorageFileName": {
+                    "value": "@activity('GetApiTaskInfo').output.firstRow.RawStorageFileName",
+                    "type": "Expression"
+                  },
+                  "BronzeSchemaName": {
+                    "value": "@activity('GetApiTaskInfo').output.firstRow.BronzeSchemaName",
+                    "type": "Expression"
+                  },
+                  "BronzeTableName": {
+                    "value": "@activity('GetApiTaskInfo').output.firstRow.BronzeTableName",
+                    "type": "Expression"
+                  },
+                  "BronzeLoadMethod": {
+                    "value": "@activity('GetApiTaskInfo').output.firstRow.BronzeLoadMethod",
+                    "type": "Expression"
+                  },
+                  "PrimaryKeyColumnList": {
+                    "value": "@activity('GetApiTaskInfo').output.firstRow.PrimaryKeyColumnList",
+                    "type": "Expression"
+                  },
+                  "SourceName": {
+                    "value": "@activity('GetApiTaskInfo').output.firstRow.SourceName",
+                    "type": "Expression"
+                  },
+                  "BronzeWorkspaceId": {
+                    "value": "@activity('GetApiTaskInfo').output.firstRow.BronzeWorkspaceId",
+                    "type": "Expression"
+                  },
+                  "BronzeLakehouseId": {
+                    "value": "@activity('GetApiTaskInfo').output.firstRow.BronzeLakehouseId",
+                    "type": "Expression"
+                  },
+                  "IsWatermarkEnabledFlag": {
+                    "value": "@activity('GetApiTaskInfo').output.firstRow.IsWatermarkEnabledFlag",
+                    "type": "Expression"
+                  },
+                  "WatermarkColumn": {
+                    "value": "@activity('GetApiTaskInfo').output.firstRow.WatermarkColumn",
+                    "type": "Expression"
+                  },
+                  "SourceType": "api",
+                  "TaskKey": {
+                    "value": "@pipeline().parameters.TaskKey",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true
+              },
+              "policy": {
+                "secureInput": false
+              },
+              "name": "pl_load_raw_to_bronze",
+              "dependsOn": [
+                {
+                  "activity": "RunApiTaskNotebook",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "name": "ForEachNotebook",
+        "dependsOn": [
+          {
+            "activity": "GetTaskNotebooks",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ExecutePipeline",
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "9d9b44ab-6efb-8211-4541-b26744d83602",
+            "type": "PipelineReference"
+          },
+          "parameters": {
+            "RawStoragePath": {
+              "value": "@activity('GetApiTaskInfo').output.firstRow.RawStoragePath",
+              "type": "Expression"
+            },
+            "BronzeLakehouseId": {
+              "value": "@activity('GetApiTaskInfo').output.firstRow.BronzeLakehouseId",
+              "type": "Expression"
+            },
+            "TaskAuditKey": {
+              "value": "@pipeline().parameters.TaskAuditKey",
+              "type": "Expression"
+            },
+            "TaskKey": {
+              "value": "@pipeline().parameters.TaskKey",
+              "type": "Expression"
+            },
+            "BronzeWorkspaceId": {
+              "value": "@activity('GetApiTaskInfo').output.firstRow.BronzeWorkspaceId",
+              "type": "Expression"
+            }
+          },
+          "waitOnCompletion": true
+        },
+        "policy": {
+          "secureInput": false
+        },
+        "name": "pl_cleanup_raw",
+        "description": "Call pipeline to delete file from Raw since it was successfully loaded to Bronze.",
+        "dependsOn": [
+          {
+            "activity": "ForEachNotebook",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "TaskAuditKey": {
+        "type": "int"
+      },
+      "TaskKey": {
+        "type": "int"
+      },
+      "EtlLoadDateTime": {
+        "type": "string"
+      },
+      "TaskType": {
+        "type": "string",
+        "defaultValue": "ApiTask"
+      }
+    },
+    "variables": {
+      "varRunPageUrlExists": {
+        "type": "Boolean"
+      }
+    }
+  }
+}

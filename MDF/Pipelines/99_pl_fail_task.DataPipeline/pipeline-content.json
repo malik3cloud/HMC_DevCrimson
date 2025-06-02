@@ -1,0 +1,78 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "TaskAuditFailure",
+        "description": "Update the TaskAudit status to \"Failed\" and populate DebugString with error message and Notebook runPageUrl if applicable.",
+        "type": "SqlServerStoredProcedure",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "storedProcedureName": "[etl].[JobAuditFailure]",
+          "storedProcedureParameters": {
+            "Message": {
+              "value": {
+                "value": "@pipeline().parameters.ErrorMessage",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "TaskAuditKey": {
+              "value": {
+                "value": "@pipeline().parameters.TaskAuditKey",
+                "type": "Expression"
+              },
+              "type": "Int64"
+            }
+          }
+        },
+        "linkedService": {
+          "name": "etlControl",
+          "properties": {
+            "annotations": [],
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+              "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+              "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+            }
+          }
+        }
+      },
+      {
+        "name": "ThrowTaskFailure",
+        "description": "Throw a Fail event due to Task failure.",
+        "type": "Fail",
+        "dependsOn": [
+          {
+            "activity": "TaskAuditFailure",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "typeProperties": {
+          "message": {
+            "value": "@pipeline().parameters.ErrorMessage",
+            "type": "Expression"
+          },
+          "errorCode": "000"
+        }
+      }
+    ],
+    "parameters": {
+      "TaskAuditKey": {
+        "type": "int"
+      },
+      "ErrorMessage": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,0 +1,232 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderQuery": {
+              "value": "@concat('Select * from etl.Task where TaskKey IN (',pipeline().parameters.TaskKey,')')",
+              "type": "Expression"
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "LookupTaskInfo",
+        "dependsOn": []
+      },
+      {
+        "type": "TridentNotebook",
+        "typeProperties": {
+          "notebookId": "85ef8017-4323-8eda-412a-a5f83b3826fc",
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "parameters": {
+            "TaskList": {
+              "value": {
+                "value": "@string(activity('LookupTaskInfo').output.value)",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "WatermarkList": {
+              "value": {
+                "value": "@string(activity('LookupWatermarkInfo').output.value)",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "GUIDList": {
+              "value": null,
+              "type": "string"
+            },
+            "BronzeLhId": {
+              "value": {
+                "value": "@pipeline().libraryVariables.bronzelhid",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "CuratedLhId": {
+              "value": {
+                "value": "@pipeline().libraryVariables.curatedlhid",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "WorkspaceId": {
+              "value": {
+                "value": "@pipeline().libraryVariables.workspaceid",
+                "type": "Expression"
+              },
+              "type": "string"
+            }
+          },
+          "sessionTag": "HCSession"
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "NotebookBronzeToSilver",
+        "dependsOn": [
+          {
+            "activity": "LookupTaskInfo",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
+            "activity": "LookupWatermarkInfo",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
+            "activity": "LookupGlobalConfig",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderQuery": {
+              "value": "@concat('Select * from etl.Task where TaskKey IN (',pipeline().parameters.TaskKey,')')",
+              "type": "Expression"
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "LookupWatermarkInfo",
+        "dependsOn": []
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderQuery": "SELECT *\nFROM etl.GlobalConfig\n",
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "LookupGlobalConfig",
+        "state": "Inactive",
+        "onInactiveMarkAs": "Succeeded",
+        "dependsOn": []
+      }
+    ],
+    "parameters": {
+      "TaskKey": {
+        "type": "string"
+      }
+    },
+    "libraryVariables": {
+      "rawlhid": {
+        "type": "String",
+        "variableName": "RawLakehouseID",
+        "libraryName": "Environment"
+      },
+      "bronzelhid": {
+        "type": "String",
+        "variableName": "BronzeLakehouseID",
+        "libraryName": "Environment"
+      },
+      "curatedlhid": {
+        "type": "String",
+        "variableName": "CuratedLakehouseID",
+        "libraryName": "Environment"
+      },
+      "workspaceid": {
+        "type": "String",
+        "variableName": "WokspaceID",
+        "libraryName": "Environment"
+      }
+    }
+  }
+}
