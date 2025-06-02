@@ -1,0 +1,354 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[etl].[GetDatabaseTaskInfo]",
+            "storedProcedureParameters": {
+              "TaskAuditKey": {
+                "type": "Int64",
+                "value": {
+                  "value": "@pipeline().parameters.TaskAuditKey",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": true
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "GetDatabaseTaskInfo",
+        "dependsOn": []
+      },
+      {
+        "type": "Copy",
+        "typeProperties": {
+          "source": {
+            "type": "SqlMISource",
+            "partitionOption": "None",
+            "datasetSettings": {
+              "type": "AzureSqlMITable",
+              "typeProperties": {
+                "schema": {
+                  "value": "@activity('GetDatabaseTaskInfo').output.firstRow.SourceSchemaName",
+                  "type": "Expression"
+                },
+                "table": {
+                  "value": "@activity('GetDatabaseTaskInfo').output.firstRow.SourceTableName",
+                  "type": "Expression"
+                }
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "@pipeline().libraryVariables.DBProdConnectionID"
+              },
+              "annotations": []
+            }
+          },
+          "sink": {
+            "type": "ParquetSink",
+            "formatSettings": {
+              "type": "ParquetWriteSettings",
+              "enableVertiParquet": true
+            },
+            "storeSettings": {
+              "type": "LakehouseWriteSettings"
+            },
+            "datasetSettings": {
+              "type": "Parquet",
+              "typeProperties": {
+                "location": {
+                  "type": "LakehouseLocation",
+                  "folderPath": {
+                    "value": "@activity('GetDatabaseTaskInfo').output.firstRow.RawStoragePath",
+                    "type": "Expression"
+                  },
+                  "fileName": {
+                    "value": "@concat(activity('GetDatabaseTaskInfo').output.firstRow.RawStorageFileName,'.parquet')",
+                    "type": "Expression"
+                  }
+                },
+                "compressionCodec": "snappy"
+              },
+              "schema": [],
+              "linkedService": {
+                "name": "lh_raw",
+                "properties": {
+                  "type": "Lakehouse",
+                  "typeProperties": {
+                    "artifactId": "a57e9e3f-d7ba-a2a3-4013-7104920a12cc",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                    "rootFolder": "Files"
+                  },
+                  "annotations": []
+                }
+              },
+              "annotations": []
+            }
+          },
+          "translator": {
+            "type": "TabularTranslator",
+            "typeConversion": true,
+            "typeConversionSettings": {
+              "allowDataTruncation": true,
+              "treatBooleanAsNumber": false
+            }
+          },
+          "enableStaging": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "SQL Server",
+        "dependsOn": [
+          {
+            "activity": "Clear Raw Folder",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "TridentNotebook",
+        "typeProperties": {
+          "notebookId": "0be5b9b9-b4b1-b152-4462-8ae586682448",
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "parameters": {
+            "GlobalConfig": {
+              "value": {
+                "value": "@string(activity('GetGlobalConfig').output.value)",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "TaskList": {
+              "value": {
+                "value": "@string(activity('GetTaskInfo').output.value)",
+                "type": "Expression"
+              },
+              "type": "string"
+            }
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "ConvertNonCompatibleDataTypes",
+        "dependsOn": [
+          {
+            "activity": "SQL Server",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
+            "activity": "GetGlobalConfig",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
+            "activity": "GetTaskInfo",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderQuery": "Select * from etl.GlobalConfig",
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "GetGlobalConfig",
+        "dependsOn": []
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderQuery": {
+              "value": "@concat('Select * from etl.Task where TaskKey in (',pipeline().parameters.TaskKey,')')",
+              "type": "Expression"
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "GetTaskInfo",
+        "dependsOn": []
+      },
+      {
+        "type": "Delete",
+        "typeProperties": {
+          "enableLogging": false,
+          "datasetSettings": {
+            "type": "Binary",
+            "typeProperties": {
+              "location": {
+                "type": "LakehouseLocation",
+                "folderPath": {
+                  "value": "@concat(activity('GetDatabaseTaskInfo').output.firstRow.RawStoragePath)",
+                  "type": "Expression"
+                },
+                "fileName": {
+                  "value": "@concat(activity('GetDatabaseTaskInfo').output.firstRow.RawStorageFileName,'.parquet')",
+                  "type": "Expression"
+                }
+              }
+            },
+            "linkedService": {
+              "name": "lh_raw",
+              "properties": {
+                "type": "Lakehouse",
+                "typeProperties": {
+                  "artifactId": "a57e9e3f-d7ba-a2a3-4013-7104920a12cc",
+                  "workspaceId": "00000000-0000-0000-0000-000000000000",
+                  "rootFolder": "Files"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "storeSettings": {
+            "type": "LakehouseReadSettings",
+            "recursive": true,
+            "enablePartitionDiscovery": false
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Clear Raw Folder",
+        "description": "This will be replaced by archiving  mechanism",
+        "dependsOn": [
+          {
+            "activity": "GetDatabaseTaskInfo",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "TaskAuditKey": {
+        "type": "int"
+      },
+      "TaskQuery": {
+        "type": "string"
+      },
+      "ETLLoadDateTime": {
+        "type": "string"
+      },
+      "TaskKey": {
+        "type": "string"
+      }
+    },
+    "libraryVariables": {
+      "DBProdConnectionID": {
+        "type": "String",
+        "variableName": "DBProdConnectionID",
+        "libraryName": "Environment"
+      }
+    }
+  }
+}

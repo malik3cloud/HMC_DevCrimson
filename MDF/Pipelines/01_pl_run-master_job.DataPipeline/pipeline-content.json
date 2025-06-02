@@ -1,0 +1,427 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "EtlLoadDateTime",
+          "value": {
+            "value": "@concat(\n    substring(pipeline().TriggerTime, 0, 4),\n    substring(pipeline().TriggerTime, 5, 2),\n    substring(pipeline().TriggerTime, 8, 2),\n    'T',\n    substring(pipeline().TriggerTime, 11, 2),\n    substring(pipeline().TriggerTime, 14, 2),\n    substring(pipeline().TriggerTime, 17, 2),\n    'Z'\n)",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "SetEtlLoadDateTime",
+        "description": "Set EtlLoadDateTime with format yyyyMMdd'T'HHmmss'Z' (example: 20241030T132434Z)",
+        "dependsOn": []
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[etl].[JobAuditStart]",
+            "storedProcedureParameters": {
+              "FabricWorkspaceID": {
+                "type": "String",
+                "value": {
+                  "value": "@pipeline().DataFactory",
+                  "type": "Expression"
+                }
+              },
+              "PipelineRunID": {
+                "type": "String",
+                "value": {
+                  "value": "@pipeline().RunId",
+                  "type": "Expression"
+                }
+              },
+              "JobName": {
+                "type": "String",
+                "value": {
+                  "value": "@pipeline().parameters.JobName",
+                  "type": "Expression"
+                }
+              },
+              "TaskKeyList": {
+                "type": "String",
+                "value": {
+                  "value": "@pipeline().parameters.TaskKeyList",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 4,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "JobAuditStart",
+        "description": "Creates the JobAudit to start a Job whether it's a defined job (per job name) or ad-hoc job (TaskKey). A Job will execute 1 or more Tasks assigned to either the JobName, or TaskKey depending on which value is provided in the pipeline parameters.",
+        "dependsOn": [
+          {
+            "activity": "SetEtlLoadDateTime",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
+            "activity": "ReleaseJobAuditStartLock",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "IfCondition",
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(activity('JobAuditStart').output.firstRow.JobAuditKey, 0)",
+            "type": "Expression"
+          },
+          "ifTrueActivities": [
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": "Invalid input parameters",
+                "errorCode": "000"
+              },
+              "name": "ThrowParameterFailure",
+              "dependsOn": []
+            }
+          ],
+          "ifFalseActivities": []
+        },
+        "name": "IfJobNotStarted",
+        "dependsOn": [
+          {
+            "activity": "JobAuditStart",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SqlServerStoredProcedure",
+        "typeProperties": {
+          "storedProcedureName": "[etl].[JobAuditComplete]",
+          "storedProcedureParameters": {
+            "JobAuditKey": {
+              "value": {
+                "value": "@activity('JobAuditStart').output.firstRow.JobAuditKey",
+                "type": "Expression"
+              },
+              "type": "Int64"
+            }
+          }
+        },
+        "linkedService": {
+          "name": "etlControl",
+          "properties": {
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+              "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+              "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "JobAuditComplete",
+        "description": "Set the status of the JobAudit to Success.",
+        "dependsOn": [
+          {
+            "activity": "CheckJobProcessingMethod",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SqlServerStoredProcedure",
+        "typeProperties": {
+          "storedProcedureName": "[etl].[JobAuditFailure]",
+          "storedProcedureParameters": {
+            "JobAuditKey": {
+              "value": {
+                "value": "@activity('JobAuditStart').output.firstRow.JobAuditKey",
+                "type": "Expression"
+              },
+              "type": "Int64"
+            }
+          }
+        },
+        "linkedService": {
+          "name": "etlControl",
+          "properties": {
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+              "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+              "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "JobAuditFailure",
+        "description": "Set the status of the JobAudit to Failed because one or more inner activities failed.",
+        "dependsOn": [
+          {
+            "activity": "CheckJobProcessingMethod",
+            "dependencyConditions": [
+              "Failed"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Fail",
+        "typeProperties": {
+          "message": "Job failed due to one or more Tasks failing. Check JobAudit and TaskAudit for details",
+          "errorCode": "000"
+        },
+        "name": "ThrowTasksFailure",
+        "dependsOn": [
+          {
+            "activity": "JobAuditFailure",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Switch",
+        "typeProperties": {
+          "on": {
+            "value": "@activity('JobAuditStart').output.firstRow.ProcessingMethod",
+            "type": "Expression"
+          },
+          "cases": [
+            {
+              "value": "Parallel",
+              "activities": [
+                {
+                  "type": "ExecutePipeline",
+                  "typeProperties": {
+                    "pipeline": {
+                      "referenceName": "4bffb647-4756-9b28-49a2-cbc4dd603eb1",
+                      "type": "PipelineReference"
+                    },
+                    "parameters": {
+                      "JobAuditKey": {
+                        "value": "@activity('JobAuditStart').output.firstRow.JobAuditKey",
+                        "type": "Expression"
+                      },
+                      "EtlLoadDateTime": {
+                        "value": "@variables('EtlLoadDateTime')",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true
+                  },
+                  "policy": {
+                    "secureInput": false
+                  },
+                  "name": "pl_parallel_tasks",
+                  "dependsOn": []
+                }
+              ]
+            },
+            {
+              "value": "Sequential",
+              "activities": [
+                {
+                  "type": "ExecutePipeline",
+                  "typeProperties": {
+                    "pipeline": {
+                      "referenceName": "2336d9a2-6086-8186-4e2f-062acc6b1283",
+                      "type": "PipelineReference"
+                    },
+                    "parameters": {
+                      "JobAuditKey": "@activity('JobAuditStart').output.firstRow.JobAuditKey",
+                      "EtlLoadDateTime": {
+                        "value": "@variables('EtlLoadDateTime')",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true
+                  },
+                  "policy": {
+                    "secureInput": false
+                  },
+                  "name": "pl_sequential_tasks",
+                  "dependsOn": []
+                }
+              ]
+            },
+            {
+              "value": "SequentialAndParallel",
+              "activities": [
+                {
+                  "type": "ExecutePipeline",
+                  "typeProperties": {
+                    "pipeline": {
+                      "referenceName": "1cea7fd2-bf1c-99ff-4878-bcba3f69049d",
+                      "type": "PipelineReference"
+                    },
+                    "parameters": {
+                      "JobAuditKey": {
+                        "value": "@activity('JobAuditStart').output.firstRow.JobAuditKey",
+                        "type": "Expression"
+                      },
+                      "EtlLoadDateTime": {
+                        "value": "@activity('JobAuditStart').output.firstRow.EtlLoadDateTime",
+                        "type": "Expression"
+                      },
+                      "TaskRunOrderNbr": {
+                        "value": "@variables('EtlLoadDateTime')",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true
+                  },
+                  "policy": {
+                    "secureInput": false
+                  },
+                  "name": "pl_sequential_parallel_tasks",
+                  "dependsOn": []
+                }
+              ]
+            }
+          ],
+          "defaultActivities": [
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": "Invalid Processing Method",
+                "errorCode": "000"
+              },
+              "name": "ThrowProcessingMethodValueError",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "CheckJobProcessingMethod",
+        "description": "Checks execution method of tasks by RunOrderNbr",
+        "dependsOn": [
+          {
+            "activity": "IfJobNotStarted",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ExecutePipeline",
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "664af2b1-1a07-97eb-4cce-36e6caa2f53a",
+            "type": "PipelineReference"
+          },
+          "parameters": {},
+          "waitOnCompletion": true
+        },
+        "policy": {
+          "secureInput": false
+        },
+        "name": "SendFailureEmail",
+        "dependsOn": [
+          {
+            "activity": "JobAuditFailure",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SqlServerStoredProcedure",
+        "typeProperties": {
+          "storedProcedureName": "[etl].[ReleaseJobAuditStartLock]"
+        },
+        "linkedService": {
+          "name": "etlControl",
+          "properties": {
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+              "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+              "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 4,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "ReleaseJobAuditStartLock",
+        "dependsOn": []
+      }
+    ],
+    "parameters": {
+      "TaskKeyList": {
+        "type": "string"
+      },
+      "JobName": {
+        "type": "string"
+      }
+    },
+    "variables": {
+      "EtlLoadDateTime": {
+        "type": "String"
+      },
+      "ErrorMessage": {
+        "type": "String"
+      }
+    }
+  }
+}

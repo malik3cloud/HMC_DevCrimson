@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "KnowBe4Users",
+    "description": "Gets the list of users from KnowBe4"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "02480203-1780-8be6-49f3-d0c5b0c71f85"
+  }
+}

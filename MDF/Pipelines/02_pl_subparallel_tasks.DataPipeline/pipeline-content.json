@@ -1,0 +1,108 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[etl].[GetTaskWorklistByOrderNbr]",
+            "storedProcedureParameters": {
+              "JobAuditKey": {
+                "type": "Int64",
+                "value": {
+                  "value": "@pipeline().parameters.JobAuditKey",
+                  "type": "Expression"
+                }
+              },
+              "TaskRunOrderNbr": {
+                "type": "Int64",
+                "value": {
+                  "value": "@pipeline().parameters.TaskRunOrderNbr",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "GetParallelJobTasks",
+        "dependsOn": []
+      },
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "batchCount": 30,
+          "items": {
+            "value": "@activity('GetParallelJobTasks').output.value",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "ExecutePipeline",
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "664af2b1-1a07-97eb-4cce-36e6caa2f53a",
+                  "type": "PipelineReference"
+                },
+                "parameters": {},
+                "waitOnCompletion": true
+              },
+              "policy": {
+                "secureInput": false
+              },
+              "name": "pl_run_task",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "ForEachParallelTask",
+        "dependsOn": [
+          {
+            "activity": "GetParallelJobTasks",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "JobAuditKey": {
+        "type": "int"
+      },
+      "EtlLoadDateTime": {
+        "type": "string"
+      },
+      "TaskRunOrderNbr": {
+        "type": "int"
+      }
+    }
+  }
+}

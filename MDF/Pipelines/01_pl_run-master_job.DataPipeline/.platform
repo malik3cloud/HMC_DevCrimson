@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "01_pl_run-master_job",
+    "description": "Main pipeline that starts a job and triggers sub-pipelines. Set 1 of 3 parameters for runtime scope: 1) JobName, 2) TaskKeyList (comma-delimited list of TaskKeys)"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "ad5a99c8-d9e9-becf-4a6d-a582015ba66f"
+  }
+}

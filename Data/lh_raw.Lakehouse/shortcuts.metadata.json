@@ -1,0 +1,14 @@
+[
+  {
+    "name": "proworkspace",
+    "path": "/Files",
+    "target": {
+      "type": "AdlsGen2",
+      "adlsGen2": {
+        "connectionId": "a726bf6b-26bb-4894-a826-641550b697d3",
+        "location": "https://stprowrkspc6ex.dfs.core.windows.net",
+        "subpath": "/proworkspace"
+      }
+    }
+  }
+]

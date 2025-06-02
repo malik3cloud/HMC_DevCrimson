@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "02_pl_sequential_parallel_tasks"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "1cea7fd2-bf1c-99ff-4878-bcba3f69049d"
+  }
+}

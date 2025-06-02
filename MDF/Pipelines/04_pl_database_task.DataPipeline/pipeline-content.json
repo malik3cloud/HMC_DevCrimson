@@ -1,0 +1,407 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[etl].[GetDatabaseTaskInfo]",
+            "storedProcedureParameters": {
+              "TaskAuditKey": {
+                "type": "Int64",
+                "value": {
+                  "value": "@pipeline().parameters.TaskAuditKey",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "GetTaskInfo",
+        "dependsOn": []
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[etl].[GetDatabaseTaskQuery]",
+            "storedProcedureParameters": {
+              "TaskAuditKey": {
+                "type": "Int64",
+                "value": {
+                  "value": "@pipeline().parameters.TaskAuditKey",
+                  "type": "Expression"
+                }
+              },
+              "TaskKey": {
+                "type": "Int32",
+                "value": {
+                  "value": "@pipeline().parameters.TaskKey",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "GetTaskQuery",
+        "description": "Generates the database query to be used by copy activity",
+        "state": "Inactive",
+        "onInactiveMarkAs": "Succeeded",
+        "dependsOn": [
+          {
+            "activity": "GetTaskInfo",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Switch",
+        "typeProperties": {
+          "on": {
+            "value": "@toLower(activity('GetTaskInfo').output.firstRow.SourceType)",
+            "type": "Expression"
+          },
+          "cases": [
+            {
+              "value": "snowflake",
+              "activities": [
+                {
+                  "type": "ExecutePipeline",
+                  "typeProperties": {
+                    "pipeline": {
+                      "referenceName": "595e3164-863c-9a78-4e17-412c933ec850",
+                      "type": "PipelineReference"
+                    },
+                    "parameters": {},
+                    "waitOnCompletion": true
+                  },
+                  "policy": {
+                    "secureInput": false
+                  },
+                  "name": "pl_snowflake",
+                  "dependsOn": []
+                }
+              ]
+            },
+            {
+              "value": "oracle",
+              "activities": [
+                {
+                  "type": "ExecutePipeline",
+                  "typeProperties": {
+                    "pipeline": {
+                      "referenceName": "03a97304-1381-8bef-4acd-a4dc1a8ed2d6",
+                      "type": "PipelineReference"
+                    },
+                    "parameters": {},
+                    "waitOnCompletion": true
+                  },
+                  "policy": {
+                    "secureInput": false
+                  },
+                  "name": "pl_oracle",
+                  "dependsOn": []
+                }
+              ]
+            },
+            {
+              "value": "sqlserver",
+              "activities": [
+                {
+                  "type": "ExecutePipeline",
+                  "typeProperties": {
+                    "pipeline": {
+                      "referenceName": "6bf6279c-dc10-b3b6-4ec4-0fd10e7598bd",
+                      "type": "PipelineReference"
+                    },
+                    "parameters": {
+                      "TaskAuditKey": {
+                        "value": "@pipeline().parameters.TaskAuditKey",
+                        "type": "Expression"
+                      },
+                      "ETLLoadDateTime": {
+                        "value": "@pipeline().parameters.EtlLoadDateTime",
+                        "type": "Expression"
+                      },
+                      "TaskKey": {
+                        "value": "@pipeline().parameters.TaskKey",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true
+                  },
+                  "policy": {
+                    "secureInput": false
+                  },
+                  "name": "pl_sqlserver",
+                  "dependsOn": []
+                }
+              ]
+            }
+          ],
+          "defaultActivities": [
+            {
+              "type": "ExecutePipeline",
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "d27342c0-58ae-b5f6-44da-7109b0b8bc03",
+                  "type": "PipelineReference"
+                },
+                "parameters": {
+                  "TaskAuditKey": {
+                    "value": "@pipeline().parameters.TaskAuditKey",
+                    "type": "Expression"
+                  },
+                  "ErrorMessage": {
+                    "value": "@concat('Invalid SourceType: ',activity('GetTaskInfo').output.firstRow.SourceType,' for pl_database_task. TaskAuditKey: ',string(pipeline().parameters.TaskAuditKey))",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true
+              },
+              "policy": {
+                "secureInput": false
+              },
+              "name": "pl_fail_task_InvalidSourceType",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "CaseSourceType",
+        "description": "Based on the type of source DB, execute the proper \"Copy Data\" activity and extraction query.",
+        "dependsOn": [
+          {
+            "activity": "GetTaskQuery",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ExecutePipeline",
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "f0f37905-6dab-a9c6-412a-39ec5f42cfbc",
+            "type": "PipelineReference"
+          },
+          "parameters": {
+            "TaskAuditKey": {
+              "value": "@pipeline().parameters.TaskAuditKey",
+              "type": "Expression"
+            },
+            "TaskKey": {
+              "value": "@pipeline().parameters.TaskKey",
+              "type": "Expression"
+            },
+            "TaskList": {
+              "value": "@string(activity('GetTaskInfo').output.firstRow)",
+              "type": "Expression"
+            }
+          },
+          "waitOnCompletion": true
+        },
+        "policy": {
+          "secureInput": false
+        },
+        "name": "pl_load_raw_to_bronze",
+        "dependsOn": [
+          {
+            "activity": "CaseSourceType",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ExecutePipeline",
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "44d83602-b267-4541-8211-6efb9d9b44ab",
+            "type": "PipelineReference"
+          },
+          "parameters": {},
+          "waitOnCompletion": true
+        },
+        "policy": {
+          "secureInput": false
+        },
+        "name": "pl_cleanup_raw",
+        "description": "Call pipeline to delete file from Raw since it was successfully loaded to Bronze.",
+        "state": "Inactive",
+        "onInactiveMarkAs": "Succeeded",
+        "dependsOn": [
+          {
+            "activity": "pl_load_raw_to_bronze",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SqlServerStoredProcedure",
+        "typeProperties": {
+          "storedProcedureName": "[etl].[TaskAuditExecutionUpdate]",
+          "storedProcedureParameters": {
+            "IsPartitionFlag": {
+              "value": null,
+              "type": "Boolean"
+            },
+            "RowsCopied": {
+              "value": null,
+              "type": "Int64"
+            },
+            "RowsDeleted": {
+              "value": {
+                "value": "@activity('pl_load_raw_to_bronze').output.pipelineReturnValue.RowsDeleted",
+                "type": "Expression"
+              },
+              "type": "Int64"
+            },
+            "RowsInserted": {
+              "value": {
+                "value": "@activity('pl_load_raw_to_bronze').output.pipelineReturnValue.RowsInserted",
+                "type": "Expression"
+              },
+              "type": "Int64"
+            },
+            "RowsRead": {
+              "value": null,
+              "type": "Int64"
+            },
+            "RowsSkipped": {
+              "value": null,
+              "type": "Int64"
+            },
+            "RowsUpdated": {
+              "value": {
+                "value": "@activity('pl_load_raw_to_bronze').output.pipelineReturnValue.RowsUpdated",
+                "type": "Expression"
+              },
+              "type": "Int64"
+            },
+            "TaskAuditKey": {
+              "value": {
+                "value": "@pipeline().parameters.TaskAuditKey",
+                "type": "Expression"
+              },
+              "type": "Int64"
+            }
+          }
+        },
+        "linkedService": {
+          "name": "etlControl",
+          "properties": {
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+              "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+              "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 30,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "TaskAuditExecutionUpdate",
+        "dependsOn": [
+          {
+            "activity": "pl_load_raw_to_bronze",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "TaskAuditKey": {
+        "type": "int"
+      },
+      "EtlLoadDateTime": {
+        "type": "string"
+      },
+      "TaskType": {
+        "type": "string",
+        "defaultValue": "DatabaseTask"
+      },
+      "TaskKey": {
+        "type": "string"
+      }
+    },
+    "variables": {
+      "RowsRead": {
+        "type": "String"
+      },
+      "RowsCopied": {
+        "type": "String"
+      },
+      "TaskKey": {
+        "type": "String"
+      }
+    }
+  }
+}

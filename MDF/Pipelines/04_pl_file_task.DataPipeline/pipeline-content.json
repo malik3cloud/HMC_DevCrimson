@@ -1,0 +1,263 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[etl].[GetFileTaskInfo]",
+            "storedProcedureParameters": {
+              "TaskAuditKey": {
+                "type": "Int64",
+                "value": {
+                  "value": "@pipeline().parameters.TaskAuditKey",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "GetFileTaskInfo",
+        "dependsOn": []
+      },
+      {
+        "type": "Switch",
+        "typeProperties": {
+          "on": {
+            "value": "@toLower(activity('GetFileTaskInfo').output.firstRow.FileType)",
+            "type": "Expression"
+          },
+          "cases": [
+            {
+              "value": "sharepointlisttask",
+              "activities": [
+                {
+                  "type": "ExecutePipeline",
+                  "typeProperties": {
+                    "pipeline": {
+                      "referenceName": "9fcdd961-a19a-999b-4197-e7bcee095755",
+                      "type": "PipelineReference"
+                    },
+                    "parameters": {},
+                    "waitOnCompletion": true
+                  },
+                  "policy": {
+                    "secureInput": false
+                  },
+                  "name": "pl_sharepoint",
+                  "dependsOn": []
+                }
+              ]
+            },
+            {
+              "value": "delimited",
+              "activities": [
+                {
+                  "type": "ExecutePipeline",
+                  "typeProperties": {
+                    "pipeline": {
+                      "referenceName": "9ab50a5d-2a8a-92a2-4bf4-5984f3f7a871",
+                      "type": "PipelineReference"
+                    },
+                    "parameters": {
+                      "TaskAuditKey": {
+                        "value": "@pipeline().parameters.TaskAuditKey",
+                        "type": "Expression"
+                      },
+                      "TaskKey": {
+                        "value": "@pipeline().parameters.TaskKey",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true
+                  },
+                  "policy": {
+                    "secureInput": false
+                  },
+                  "name": "pl_delimited",
+                  "dependsOn": []
+                }
+              ]
+            },
+            {
+              "value": "factset",
+              "activities": [
+                {
+                  "type": "ExecutePipeline",
+                  "typeProperties": {
+                    "pipeline": {
+                      "referenceName": "bb36f4b7-d42b-b05d-4d71-9591f051aad8",
+                      "type": "PipelineReference"
+                    },
+                    "parameters": {
+                      "TaskAuditKey": {
+                        "value": "@pipeline().parameters.TaskAuditKey",
+                        "type": "Expression"
+                      },
+                      "ETLLoadDateTime": {
+                        "value": "@pipeline().parameters.EtlLoadDateTime",
+                        "type": "Expression"
+                      },
+                      "TaskKey": {
+                        "value": "@pipeline().parameters.TaskKey",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true
+                  },
+                  "policy": {
+                    "secureInput": false
+                  },
+                  "name": "05_pl_factset",
+                  "dependsOn": []
+                }
+              ]
+            }
+          ],
+          "defaultActivities": []
+        },
+        "name": "CaseSourceType",
+        "description": "Based on the type of source DB, execute the proper \"Copy Data\" activity and extraction query.",
+        "dependsOn": [
+          {
+            "activity": "GetFileTaskInfo",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ExecutePipeline",
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "f0f37905-6dab-a9c6-412a-39ec5f42cfbc",
+            "type": "PipelineReference"
+          },
+          "parameters": {
+            "TaskAuditKey": {
+              "value": "@pipeline().parameters.TaskAuditKey",
+              "type": "Expression"
+            },
+            "TaskKey": {
+              "value": "@pipeline().parameters.TaskKey",
+              "type": "Expression"
+            },
+            "TaskList": {
+              "value": "@string(activity('GetFileTaskInfo').output.firstRow)",
+              "type": "Expression"
+            }
+          },
+          "waitOnCompletion": true
+        },
+        "policy": {
+          "secureInput": false
+        },
+        "name": "pl_load_raw_to_bronze",
+        "dependsOn": [
+          {
+            "activity": "CaseSourceType",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Delete",
+        "typeProperties": {
+          "enableLogging": false,
+          "datasetSettings": {
+            "type": "Binary",
+            "typeProperties": {
+              "location": {
+                "type": "LakehouseLocation",
+                "folderPath": {
+                  "value": "@concat('Archive/', formatDateTime(addDays(utcNow(), -31), 'yyyy/MM/dd'))",
+                  "type": "Expression"
+                }
+              }
+            },
+            "linkedService": {
+              "name": "lh_raw",
+              "properties": {
+                "type": "Lakehouse",
+                "typeProperties": {
+                  "artifactId": "a57e9e3f-d7ba-a2a3-4013-7104920a12cc",
+                  "workspaceId": "00000000-0000-0000-0000-000000000000",
+                  "rootFolder": "Files"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "storeSettings": {
+            "type": "LakehouseReadSettings",
+            "recursive": true,
+            "enablePartitionDiscovery": false
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "DeleteOldArchive",
+        "description": "Older than 30days",
+        "dependsOn": [
+          {
+            "activity": "pl_load_raw_to_bronze",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "TaskAuditKey": {
+        "type": "int"
+      },
+      "EtlLoadDateTime": {
+        "type": "string"
+      },
+      "TaskType": {
+        "type": "string",
+        "defaultValue": "FileTask"
+      },
+      "TaskKey": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,0 +1,260 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[etl].[GetTaskWorklistByOrderNbr]",
+            "storedProcedureParameters": {
+              "JobAuditKey": {
+                "type": "Int64",
+                "value": {
+                  "value": "@pipeline().parameters.JobAuditKey",
+                  "type": "Expression"
+                }
+              },
+              "TaskRunOrderNbr": {
+                "type": "Int64",
+                "value": {
+                  "value": "@pipeline().parameters.TaskRunOrderNbr",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "GetJobTaskRunOrderNbr",
+        "dependsOn": []
+      },
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "isSequential": true,
+          "items": {
+            "value": "@activity('GetJobTaskRunOrderNbr').output.value",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "IfCondition",
+              "typeProperties": {
+                "expression": {
+                  "value": "@equals(\n    activity('GetTasksCountByOrderNbr').output.firstRow.TaskAuditKeyCount, 1)",
+                  "type": "Expression"
+                },
+                "ifTrueActivities": [
+                  {
+                    "type": "Lookup",
+                    "typeProperties": {
+                      "source": {
+                        "type": "DataWarehouseSource",
+                        "sqlReaderStoredProcedureName": "[etl].[GetTaskWorklistByOrderNbr]",
+                        "storedProcedureParameters": {
+                          "JobAuditKey": {
+                            "type": "Int64",
+                            "value": {
+                              "value": "@pipeline().parameters.JobAuditKey",
+                              "type": "Expression"
+                            }
+                          },
+                          "TaskRunOrderNbr": {
+                            "type": "Int64",
+                            "value": {
+                              "value": "@item().TaskRunOrderNbr",
+                              "type": "Expression"
+                            }
+                          }
+                        },
+                        "partitionOption": "None",
+                        "queryTimeout": "02:00:00"
+                      },
+                      "datasetSettings": {
+                        "type": "DataWarehouseTable",
+                        "schema": [],
+                        "linkedService": {
+                          "name": "etlControl",
+                          "properties": {
+                            "type": "DataWarehouse",
+                            "typeProperties": {
+                              "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                              "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                              "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                            },
+                            "annotations": []
+                          }
+                        },
+                        "annotations": []
+                      },
+                      "firstRowOnly": true
+                    },
+                    "policy": {
+                      "timeout": "0.12:00:00",
+                      "retry": 2,
+                      "retryIntervalInSeconds": 30,
+                      "secureInput": false,
+                      "secureOutput": false
+                    },
+                    "name": "GetSingularJobTask",
+                    "dependsOn": []
+                  },
+                  {
+                    "type": "ExecutePipeline",
+                    "typeProperties": {
+                      "pipeline": {
+                        "referenceName": "664af2b1-1a07-97eb-4cce-36e6caa2f53a",
+                        "type": "PipelineReference"
+                      },
+                      "parameters": {},
+                      "waitOnCompletion": true
+                    },
+                    "policy": {
+                      "secureInput": false
+                    },
+                    "name": "pl_run_task",
+                    "dependsOn": [
+                      {
+                        "activity": "GetSingularJobTask",
+                        "dependencyConditions": [
+                          "Succeeded"
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "ifFalseActivities": [
+                  {
+                    "type": "ExecutePipeline",
+                    "typeProperties": {
+                      "pipeline": {
+                        "referenceName": "b2e04cdc-086c-a807-4093-1378c3ea2c7e",
+                        "type": "PipelineReference"
+                      },
+                      "parameters": {},
+                      "waitOnCompletion": true
+                    },
+                    "policy": {
+                      "secureInput": false
+                    },
+                    "name": "pl_subparallel_tasks",
+                    "dependsOn": []
+                  }
+                ]
+              },
+              "name": "IfSingularTask",
+              "dependsOn": [
+                {
+                  "activity": "GetTasksCountByOrderNbr",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Lookup",
+              "typeProperties": {
+                "source": {
+                  "type": "DataWarehouseSource",
+                  "sqlReaderStoredProcedureName": "[etl].[GetTaskWorklistCount]",
+                  "storedProcedureParameters": {
+                    "JobAuditKey": {
+                      "type": "Int64",
+                      "value": {
+                        "value": "@pipeline().parameters.JobAuditKey",
+                        "type": "Expression"
+                      }
+                    },
+                    "TaskRunOrderNbr": {
+                      "type": "Int64",
+                      "value": {
+                        "value": "@item().TaskRunOrderNbr",
+                        "type": "Expression"
+                      }
+                    }
+                  },
+                  "partitionOption": "None",
+                  "queryTimeout": "02:00:00"
+                },
+                "datasetSettings": {
+                  "type": "DataWarehouseTable",
+                  "schema": [],
+                  "linkedService": {
+                    "name": "etlControl",
+                    "properties": {
+                      "type": "DataWarehouse",
+                      "typeProperties": {
+                        "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                        "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                        "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                      },
+                      "annotations": []
+                    }
+                  },
+                  "annotations": []
+                }
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "GetTasksCountByOrderNbr",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "ForEachTaskRunOrderNbr",
+        "dependsOn": [
+          {
+            "activity": "GetJobTaskRunOrderNbr",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "JobAuditKey": {
+        "type": "string"
+      },
+      "EtlLoadDateTime": {
+        "type": "string"
+      },
+      "TaskRunOrderNbr": {
+        "type": "string"
+      }
+    }
+  }
+}

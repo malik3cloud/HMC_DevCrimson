@@ -1,0 +1,298 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[etl].[TaskAuditStart]",
+            "storedProcedureParameters": {
+              "TaskAuditKey": {
+                "type": "Int64",
+                "value": {
+                  "value": "@pipeline().parameters.TaskAuditKey",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 30,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "TaskAuditStart",
+        "description": "Executes a stored proc to start the Task and logging to TaskAudit table.",
+        "dependsOn": []
+      },
+      {
+        "type": "Switch",
+        "typeProperties": {
+          "on": {
+            "value": "@activity('TaskAuditStart').output.firstRow.TaskType",
+            "type": "Expression"
+          },
+          "cases": [
+            {
+              "value": "ApiTask",
+              "activities": [
+                {
+                  "type": "ExecutePipeline",
+                  "typeProperties": {
+                    "pipeline": {
+                      "referenceName": "3839a483-d2de-8fef-4513-b0e888cb6067",
+                      "type": "PipelineReference"
+                    },
+                    "parameters": {
+                      "TaskAuditKey": {
+                        "value": "@pipeline().parameters.TaskAuditKey",
+                        "type": "Expression"
+                      },
+                      "TaskKey": {
+                        "value": "@activity('TaskAuditStart').output.firstRow.TaskKey",
+                        "type": "Expression"
+                      },
+                      "TaskType": {
+                        "value": "@activity('TaskAuditStart').output.firstRow.TaskType",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true
+                  },
+                  "policy": {
+                    "secureInput": false
+                  },
+                  "name": "pl_api_task",
+                  "description": "If the task is an API task, then run the ingestion pipeline to ingest data via API.",
+                  "dependsOn": []
+                }
+              ]
+            },
+            {
+              "value": "DatabaseTask",
+              "activities": [
+                {
+                  "type": "ExecutePipeline",
+                  "typeProperties": {
+                    "pipeline": {
+                      "referenceName": "c39811bf-1aaf-88e6-4336-fff98767d85c",
+                      "type": "PipelineReference"
+                    },
+                    "parameters": {
+                      "TaskAuditKey": {
+                        "value": "@pipeline().parameters.TaskAuditKey",
+                        "type": "Expression"
+                      },
+                      "TaskType": {
+                        "value": "@activity('TaskAuditStart').output.firstRow.TaskType",
+                        "type": "Expression"
+                      },
+                      "TaskKey": {
+                        "value": "@activity('TaskAuditStart').output.firstRow.TaskKey",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true
+                  },
+                  "policy": {
+                    "secureInput": false
+                  },
+                  "name": "pl_database_task",
+                  "description": "If the task is a database task, then run the ingestion pipeline for a database source",
+                  "dependsOn": []
+                }
+              ]
+            },
+            {
+              "value": "FileTask",
+              "activities": [
+                {
+                  "type": "ExecutePipeline",
+                  "typeProperties": {
+                    "pipeline": {
+                      "referenceName": "cede3ad2-78f0-9668-4faa-623cb2adbefa",
+                      "type": "PipelineReference"
+                    },
+                    "parameters": {
+                      "TaskAuditKey": {
+                        "value": "@pipeline().parameters.TaskAuditKey",
+                        "type": "Expression"
+                      },
+                      "TaskType": {
+                        "value": "@activity('TaskAuditStart').output.firstRow.TaskType",
+                        "type": "Expression"
+                      },
+                      "TaskKey": {
+                        "value": "@activity('TaskAuditStart').output.firstRow.TaskKey",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true
+                  },
+                  "policy": {
+                    "secureInput": false
+                  },
+                  "name": "pl_file_task",
+                  "description": "If the task is a file task, then run the ingestion pipeline for a database source",
+                  "dependsOn": []
+                }
+              ]
+            },
+            {
+              "value": "BronzeToSilver",
+              "activities": [
+                {
+                  "type": "ExecutePipeline",
+                  "typeProperties": {
+                    "pipeline": {
+                      "referenceName": "8fe109d6-31ae-a1da-43fa-09dd1c6f122f",
+                      "type": "PipelineReference"
+                    },
+                    "parameters": {
+                      "TaskKey": {
+                        "value": "@activity('TaskAuditStart').output.firstRow.TaskKey",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true
+                  },
+                  "policy": {
+                    "secureInput": false
+                  },
+                  "name": "pl_bronze_to_silver",
+                  "dependsOn": []
+                }
+              ]
+            }
+          ],
+          "defaultActivities": [
+            {
+              "type": "ExecutePipeline",
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "d27342c0-58ae-b5f6-44da-7109b0b8bc03",
+                  "type": "PipelineReference"
+                },
+                "parameters": {},
+                "waitOnCompletion": true
+              },
+              "policy": {
+                "secureInput": false
+              },
+              "name": "pl_fail_task_InvalidTaskType",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "CaseTaskType",
+        "description": "Execute the appropriate pipeline that correlates with the TaskType of the task to be executed.",
+        "dependsOn": [
+          {
+            "activity": "TaskAuditStart",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SqlServerStoredProcedure",
+        "typeProperties": {
+          "storedProcedureName": "[etl].[TaskAuditSuccess]",
+          "storedProcedureParameters": {
+            "TaskAuditKey": {
+              "value": {
+                "value": "@pipeline().parameters.TaskAuditKey",
+                "type": "Expression"
+              },
+              "type": "Int64"
+            }
+          }
+        },
+        "linkedService": {
+          "name": "etlControl",
+          "properties": {
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+              "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+              "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 30,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "TaskAuditSuccess",
+        "description": "If the pipeline finished successfully, then mark this TaskAudit row as successfully complete",
+        "dependsOn": [
+          {
+            "activity": "CaseTaskType",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ExecutePipeline",
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "cede3ad2-78f0-9668-4faa-623cb2adbefa",
+            "type": "PipelineReference"
+          },
+          "parameters": {},
+          "waitOnCompletion": true
+        },
+        "policy": {
+          "secureInput": false
+        },
+        "name": "pl_fail_task_InnerFailure",
+        "dependsOn": [
+          {
+            "activity": "CaseTaskType",
+            "dependencyConditions": [
+              "Failed"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "TaskAuditKey": {
+        "type": "int"
+      },
+      "EtlLoadDateTime": {
+        "type": "string"
+      }
+    }
+  }
+}

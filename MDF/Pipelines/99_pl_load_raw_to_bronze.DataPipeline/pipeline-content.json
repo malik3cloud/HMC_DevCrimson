@@ -1,0 +1,217 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "TridentNotebook",
+        "typeProperties": {
+          "notebookId": "46b33c7c-081f-9027-49fe-931a321e6ffa",
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "parameters": {
+            "TaskKey": {
+              "value": {
+                "value": "@pipeline().parameters.TaskKey",
+                "type": "Expression"
+              },
+              "type": "int"
+            },
+            "TaskList": {
+              "value": {
+                "value": "@pipeline().parameters.TaskList",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "GlobalConfig": {
+              "value": {
+                "value": "@string(activity('GetGlobalConfig').output.value)",
+                "type": "Expression"
+              },
+              "type": "string"
+            }
+          },
+          "sessionTag": {
+            "value": "HCSession",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "RunTaskNotebook",
+        "dependsOn": [
+          {
+            "activity": "GetGlobalConfig",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "pipelineReturnValue",
+          "value": [
+            {
+              "key": "RowsCopied",
+              "value": {
+                "type": "Expression",
+                "content": "@int(json(activity('RunTaskNotebook').output.result.exitValue).RowsCopied)"
+              }
+            },
+            {
+              "key": "RowsInserted",
+              "value": {
+                "type": "Expression",
+                "content": "@int(json(activity('RunTaskNotebook').output.result.exitValue).RowsInserted)"
+              }
+            },
+            {
+              "key": "RowsUpdated",
+              "value": {
+                "type": "Expression",
+                "content": "@int(json(activity('RunTaskNotebook').output.result.exitValue).RowsUpdated)"
+              }
+            },
+            {
+              "key": "RowsDeleted",
+              "value": {
+                "type": "Expression",
+                "content": "@int(json(activity('RunTaskNotebook').output.result.exitValue).RowsDeleted)"
+              }
+            }
+          ],
+          "setSystemVariable": true
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "PipelineReturnValueRowsCopied",
+        "state": "Inactive",
+        "onInactiveMarkAs": "Succeeded",
+        "dependsOn": [
+          {
+            "activity": "RunTaskNotebook",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ExecutePipeline",
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "d27342c0-58ae-b5f6-44da-7109b0b8bc03",
+            "type": "PipelineReference"
+          },
+          "parameters": {
+            "TaskAuditKey": {
+              "value": "@pipeline().parameters.TaskAuditKey",
+              "type": "Expression"
+            },
+            "ErrorMessage": {
+              "value": "@if(variables('varRawToBronzeSparkUrlExists'),\nconcat(\n    'Notebook Error: '\n    , activity('RunTaskNotebook').output.result.error.ename\n    , ' - '\n    , activity('RunTaskNotebook').output.result.error.evalue\n    , ' | Notebook run URL: https://app.powerbi.com/'\n    , activity('RunTaskNotebook').output.SparkMonitoringURL\n),\nactivity('RunTaskNotebook').Error.message)",
+              "type": "Expression"
+            }
+          },
+          "waitOnCompletion": true
+        },
+        "policy": {
+          "secureInput": false
+        },
+        "name": "pl_fail_task_RawToBronze",
+        "dependsOn": [
+          {
+            "activity": "SetRawToBronzeSparkUrlExists",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "varRawToBronzeSparkUrlExists",
+          "value": {
+            "value": "@contains(activity('RunTaskNotebook').output,'SparkMonitoringURL')",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "SetRawToBronzeSparkUrlExists",
+        "dependsOn": [
+          {
+            "activity": "RunTaskNotebook",
+            "dependencyConditions": [
+              "Failed"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderQuery": "Select * from etl.GlobalConfig",
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "GetGlobalConfig",
+        "dependsOn": []
+      }
+    ],
+    "parameters": {
+      "TaskAuditKey": {
+        "type": "int"
+      },
+      "TaskKey": {
+        "type": "string"
+      },
+      "TaskList": {
+        "type": "string"
+      }
+    },
+    "variables": {
+      "varRawToBronzeSparkUrlExists": {
+        "type": "Boolean"
+      }
+    }
+  }
+}

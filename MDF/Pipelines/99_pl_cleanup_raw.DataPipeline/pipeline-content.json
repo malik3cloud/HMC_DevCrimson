@@ -1,0 +1,247 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "DeleteRawFiles",
+        "description": "Delete activity does not fail if no files are found to delete. So no need to verify if files exist.",
+        "type": "Delete",
+        "dependsOn": [
+          {
+            "activity": "LookupRawFilesRetentionPeriodDays",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "datasetSettings": {
+            "annotations": [],
+            "linkedService": {
+              "name": "2fc91674_9db5_4f74_b309_0105bdfb79f8",
+              "properties": {
+                "annotations": [],
+                "type": "Lakehouse",
+                "typeProperties": {
+                  "workspaceId": "@pipeline().parameters.BronzeWorkspaceId",
+                  "artifactId": "@pipeline().parameters.BronzeLakehouseId",
+                  "rootFolder": "Files"
+                }
+              }
+            },
+            "type": "Binary",
+            "typeProperties": {
+              "location": {
+                "type": "LakehouseLocation",
+                "folderPath": {
+                  "value": "@if(startswith(pipeline().parameters.RawStoragePath, 'Files/')\n, replace(pipeline().parameters.RawStoragePath, 'Files/', string(''))\n, pipeline().parameters.RawStoragePath)",
+                  "type": "Expression"
+                }
+              }
+            }
+          },
+          "enableLogging": false,
+          "storeSettings": {
+            "type": "LakehouseReadSettings",
+            "recursive": true,
+            "modifiedDatetimeStart": null,
+            "modifiedDatetimeEnd": {
+              "value": "@getPastTime(int(activity('LookupRawFilesRetentionPeriodDays').output.firstRow.RetentionPeriod), 'Day')",
+              "type": "Expression"
+            },
+            "wildcardFileName": "*",
+            "enablePartitionDiscovery": false
+          }
+        }
+      },
+      {
+        "name": "LookupRawFilesRetentionPeriodDays",
+        "type": "Lookup",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[etl].[GetRawFilesRetentionPeriod]",
+            "queryTimeout": "02:00:00",
+            "partitionOption": "None"
+          },
+          "datasetSettings": {
+            "annotations": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "annotations": [],
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                }
+              }
+            },
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "typeProperties": {}
+          }
+        }
+      },
+      {
+        "name": "LogRawDeleteFailure",
+        "type": "SqlServerStoredProcedure",
+        "dependsOn": [
+          {
+            "activity": "DeleteRawFiles",
+            "dependencyConditions": [
+              "Failed"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "storedProcedureName": "[etl].[LogMessage]",
+          "storedProcedureParameters": {
+            "JobAuditKey": {
+              "value": null,
+              "type": "Int64"
+            },
+            "Message": {
+              "value": {
+                "value": "@concat('Deletion of Raw file FAILED for TaskKey: ', string(pipeline().parameters.TaskKey), ' Raw file will be persist until manually deleted.')",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "PipelineRunID": {
+              "value": {
+                "value": "@pipeline().RunId",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "TaskAuditKey": {
+              "value": {
+                "value": "@pipeline().parameters.TaskAuditKey",
+                "type": "Expression"
+              },
+              "type": "Int64"
+            }
+          }
+        },
+        "linkedService": {
+          "name": "etlControl",
+          "properties": {
+            "annotations": [],
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+              "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+              "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+            }
+          }
+        }
+      },
+      {
+        "name": "LogRawDeleteSuccess",
+        "type": "SqlServerStoredProcedure",
+        "dependsOn": [
+          {
+            "activity": "DeleteRawFiles",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "storedProcedureName": "[etl].[LogMessage]",
+          "storedProcedureParameters": {
+            "JobAuditKey": {
+              "value": null,
+              "type": "Int64"
+            },
+            "Message": {
+              "value": {
+                "value": "@concat('Deletion of ', string(activity('DeleteRawFiles').output.filesDeleted),' files SUCCEEDED for TaskKey: ', string(pipeline().parameters.TaskKey))",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "PipelineRunID": {
+              "value": {
+                "value": "@pipeline().RunId",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "TaskAuditKey": {
+              "value": {
+                "value": "@pipeline().parameters.TaskAuditKey",
+                "type": "Expression"
+              },
+              "type": "Int64"
+            }
+          }
+        },
+        "linkedService": {
+          "name": "etlControl",
+          "properties": {
+            "annotations": [],
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+              "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+              "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "RawStoragePath": {
+        "type": "string"
+      },
+      "BronzeLakehouseId": {
+        "type": "string"
+      },
+      "TaskAuditKey": {
+        "type": "int"
+      },
+      "TaskKey": {
+        "type": "int"
+      },
+      "BronzeWorkspaceId": {
+        "type": "string"
+      }
+    },
+    "variables": {
+      "test": {
+        "type": "String"
+      }
+    }
+  }
+}

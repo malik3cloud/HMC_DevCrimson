@@ -1,0 +1,2164 @@
+{
+  "name": "{{Dataset_Name}}",
+  "compatibilityLevel": 1604,
+  "model": {
+    "name": "{{Dataset_Name}}",
+    "culture": "en-US",
+    "collation": "Latin1_General_100_BIN2_UTF8",
+    "dataAccessOptions": {
+      "legacyRedirects": true,
+      "returnErrorValuesAsNull": true
+    },
+    "defaultPowerBIDataSourceVersion": "powerBI_V3",
+    "sourceQueryCulture": "en-US",
+    "tables": [
+      {
+        "name": "FileTask",
+        "sourceLineageTag": "[etl].[FileTask]",
+        "columns": [
+          {
+            "name": "FileTaskKey",
+            "dataType": "int64",
+            "sourceColumn": "FileTaskKey",
+            "formatString": "0",
+            "sourceProviderType": "int",
+            "sourceLineageTag": "FileTaskKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TaskRunOrderNbr",
+            "dataType": "int64",
+            "sourceColumn": "TaskRunOrderNbr",
+            "formatString": "0",
+            "sourceProviderType": "int",
+            "sourceLineageTag": "TaskRunOrderNbr",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "JobKey",
+            "dataType": "int64",
+            "sourceColumn": "JobKey",
+            "formatString": "0",
+            "sourceProviderType": "int",
+            "sourceLineageTag": "JobKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "ParentSourceName",
+            "dataType": "string",
+            "sourceColumn": "ParentSourceName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "ParentSourceName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceName",
+            "dataType": "string",
+            "sourceColumn": "SourceName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceType",
+            "dataType": "string",
+            "sourceColumn": "SourceType",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceType",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TaskName",
+            "dataType": "string",
+            "sourceColumn": "TaskName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "TaskName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TaskType",
+            "dataType": "string",
+            "sourceColumn": "TaskType",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "TaskType",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkLoadMethod",
+            "dataType": "string",
+            "sourceColumn": "SinkLoadMethod",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkLoadMethod",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "FileType",
+            "dataType": "string",
+            "sourceColumn": "FileType",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "FileType",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceDataSet",
+            "dataType": "string",
+            "sourceColumn": "SourceDataSet",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceDataSet",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceWildcardFolderPath",
+            "dataType": "string",
+            "sourceColumn": "SourceWildcardFolderPath",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceWildcardFolderPath",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceWildcardFileName",
+            "dataType": "string",
+            "sourceColumn": "SourceWildcardFileName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceWildcardFileName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "Delimiter",
+            "dataType": "string",
+            "sourceColumn": "Delimiter",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "Delimiter",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "PrimaryKeyColumnList",
+            "dataType": "string",
+            "sourceColumn": "PrimaryKeyColumnList",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "PrimaryKeyColumnList",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "IsWatermarkEnabledFlag",
+            "dataType": "boolean",
+            "sourceColumn": "IsWatermarkEnabledFlag",
+            "formatString": "\"TRUE\";\"TRUE\";\"FALSE\"",
+            "sourceProviderType": "bit",
+            "sourceLineageTag": "IsWatermarkEnabledFlag",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkWatermarkColumn",
+            "dataType": "string",
+            "sourceColumn": "SinkWatermarkColumn",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkWatermarkColumn",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "LastModifiedFrom",
+            "dataType": "string",
+            "sourceColumn": "LastModifiedFrom",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "LastModifiedFrom",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkDataset",
+            "dataType": "string",
+            "sourceColumn": "SinkDataset",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkDataset",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkWorkspaceName",
+            "dataType": "string",
+            "sourceColumn": "SinkWorkspaceName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkWorkspaceName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkLakehouseName",
+            "dataType": "string",
+            "sourceColumn": "SinkLakehouseName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkLakehouseName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkWarehouseName",
+            "dataType": "string",
+            "sourceColumn": "SinkWarehouseName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkWarehouseName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkSchemaName",
+            "dataType": "string",
+            "sourceColumn": "SinkSchemaName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkSchemaName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkTableName",
+            "dataType": "string",
+            "sourceColumn": "SinkTableName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkTableName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkObjectType",
+            "dataType": "string",
+            "sourceColumn": "SinkObjectType",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkObjectType",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "NotebookKey",
+            "dataType": "int64",
+            "sourceColumn": "NotebookKey",
+            "formatString": "0",
+            "sourceProviderType": "int",
+            "sourceLineageTag": "NotebookKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RawLakehouseName",
+            "dataType": "string",
+            "sourceColumn": "RawLakehouseName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "RawLakehouseName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RawStoragePath",
+            "dataType": "string",
+            "sourceColumn": "RawStoragePath",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "RawStoragePath",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RawStorageFileName",
+            "dataType": "string",
+            "sourceColumn": "RawStorageFileName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "RawStorageFileName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "ETLWarehouseName",
+            "dataType": "string",
+            "sourceColumn": "ETLWarehouseName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "ETLWarehouseName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SkipRows",
+            "dataType": "int64",
+            "sourceColumn": "SkipRows",
+            "formatString": "0",
+            "sourceProviderType": "int",
+            "sourceLineageTag": "SkipRows",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "IsActiveFlag",
+            "dataType": "boolean",
+            "sourceColumn": "IsActiveFlag",
+            "formatString": "\"TRUE\";\"TRUE\";\"FALSE\"",
+            "sourceProviderType": "bit",
+            "sourceLineageTag": "IsActiveFlag",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "{{Partition_Name}}",
+            "mode": "directLake",
+            "source": {
+              "type": "entity",
+              "entityName": "FileTask",
+              "expressionSource": "DatabaseQuery",
+              "schemaName": "etl"
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "IsTableInBiModel",
+            "value": "False"
+          }
+        ]
+      },
+      {
+        "name": "GlobalConfig",
+        "sourceLineageTag": "[etl].[GlobalConfig]",
+        "columns": [
+          {
+            "name": "ConfigKey",
+            "dataType": "string",
+            "sourceColumn": "ConfigKey",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "ConfigKey",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "ConfigValue",
+            "dataType": "string",
+            "sourceColumn": "ConfigValue",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "ConfigValue",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "{{Partition_Name}}",
+            "mode": "directLake",
+            "source": {
+              "type": "entity",
+              "entityName": "GlobalConfig",
+              "expressionSource": "DatabaseQuery",
+              "schemaName": "etl"
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "IsTableInBiModel",
+            "value": "True"
+          }
+        ]
+      },
+      {
+        "name": "JobAudit",
+        "sourceLineageTag": "[etl].[JobAudit]",
+        "columns": [
+          {
+            "name": "JobAuditKey",
+            "dataType": "int64",
+            "sourceColumn": "JobAuditKey",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "JobAuditKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "JobKey",
+            "dataType": "int64",
+            "sourceColumn": "JobKey",
+            "formatString": "0",
+            "sourceProviderType": "int",
+            "sourceLineageTag": "JobKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "JobName",
+            "dataType": "string",
+            "sourceColumn": "JobName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "JobName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "IsAdHocJob",
+            "dataType": "boolean",
+            "sourceColumn": "IsAdHocJob",
+            "formatString": "\"TRUE\";\"TRUE\";\"FALSE\"",
+            "sourceProviderType": "bit",
+            "sourceLineageTag": "IsAdHocJob",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "StartTime",
+            "dataType": "dateTime",
+            "sourceColumn": "StartTime",
+            "formatString": "General Date",
+            "sourceProviderType": "datetime2",
+            "sourceLineageTag": "StartTime",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RestartTime",
+            "dataType": "dateTime",
+            "sourceColumn": "RestartTime",
+            "formatString": "General Date",
+            "sourceProviderType": "datetime2",
+            "sourceLineageTag": "RestartTime",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "EndTime",
+            "dataType": "dateTime",
+            "sourceColumn": "EndTime",
+            "formatString": "General Date",
+            "sourceProviderType": "datetime2",
+            "sourceLineageTag": "EndTime",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "Status",
+            "dataType": "string",
+            "sourceColumn": "Status",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "Status",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "FabricWorkspaceID",
+            "dataType": "string",
+            "sourceColumn": "FabricWorkspaceID",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "FabricWorkspaceID",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "PipelineRunID",
+            "dataType": "string",
+            "sourceColumn": "PipelineRunID",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "PipelineRunID",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "LastUpdated",
+            "dataType": "dateTime",
+            "sourceColumn": "LastUpdated",
+            "formatString": "General Date",
+            "sourceProviderType": "datetime2",
+            "sourceLineageTag": "LastUpdated",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "{{Partition_Name}}",
+            "mode": "directLake",
+            "source": {
+              "type": "entity",
+              "entityName": "JobAudit",
+              "expressionSource": "DatabaseQuery",
+              "schemaName": "etl"
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "IsTableInBiModel",
+            "value": "True"
+          }
+        ]
+      },
+      {
+        "name": "Job",
+        "sourceLineageTag": "[etl].[Job]",
+        "columns": [
+          {
+            "name": "JobKey",
+            "dataType": "int64",
+            "sourceColumn": "JobKey",
+            "formatString": "0",
+            "sourceProviderType": "int",
+            "sourceLineageTag": "JobKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "JobName",
+            "dataType": "string",
+            "sourceColumn": "JobName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "JobName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "JobDescription",
+            "dataType": "string",
+            "sourceColumn": "JobDescription",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "JobDescription",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "IsActiveFlag",
+            "dataType": "boolean",
+            "sourceColumn": "IsActiveFlag",
+            "formatString": "\"TRUE\";\"TRUE\";\"FALSE\"",
+            "sourceProviderType": "bit",
+            "sourceLineageTag": "IsActiveFlag",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "{{Partition_Name}}",
+            "mode": "directLake",
+            "source": {
+              "type": "entity",
+              "entityName": "Job",
+              "expressionSource": "DatabaseQuery",
+              "schemaName": "etl"
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "IsTableInBiModel",
+            "value": "True"
+          }
+        ]
+      },
+      {
+        "name": "Log",
+        "sourceLineageTag": "[etl].[Log]",
+        "columns": [
+          {
+            "name": "LogKey",
+            "dataType": "int64",
+            "sourceColumn": "LogKey",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "LogKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "JobAuditKey",
+            "dataType": "int64",
+            "sourceColumn": "JobAuditKey",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "JobAuditKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TaskAuditKey",
+            "dataType": "int64",
+            "sourceColumn": "TaskAuditKey",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "TaskAuditKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "PipelineRunID",
+            "dataType": "string",
+            "sourceColumn": "PipelineRunID",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "PipelineRunID",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "LogDatetime",
+            "dataType": "dateTime",
+            "sourceColumn": "LogDatetime",
+            "formatString": "General Date",
+            "sourceProviderType": "datetime2",
+            "sourceLineageTag": "LogDatetime",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "Message",
+            "dataType": "string",
+            "sourceColumn": "Message",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "Message",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "{{Partition_Name}}",
+            "mode": "directLake",
+            "source": {
+              "type": "entity",
+              "entityName": "Log",
+              "expressionSource": "DatabaseQuery",
+              "schemaName": "etl"
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "IsTableInBiModel",
+            "value": "True"
+          }
+        ]
+      },
+      {
+        "name": "Notebook",
+        "sourceLineageTag": "[etl].[Notebook]",
+        "columns": [
+          {
+            "name": "NotebookKey",
+            "dataType": "int64",
+            "sourceColumn": "NotebookKey",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "NotebookKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "NotebookName",
+            "dataType": "string",
+            "sourceColumn": "NotebookName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "NotebookName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "NotebookDescription",
+            "dataType": "string",
+            "sourceColumn": "NotebookDescription",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "NotebookDescription",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "{{Partition_Name}}",
+            "mode": "directLake",
+            "source": {
+              "type": "entity",
+              "entityName": "Notebook",
+              "expressionSource": "DatabaseQuery",
+              "schemaName": "etl"
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "IsTableInBiModel",
+            "value": "True"
+          }
+        ]
+      },
+      {
+        "name": "TaskAuditStage",
+        "sourceLineageTag": "[etl].[TaskAuditStage]",
+        "columns": [
+          {
+            "name": "TaskAuditLogKey",
+            "dataType": "int64",
+            "sourceColumn": "TaskAuditLogKey",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "TaskAuditLogKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TaskAuditKey",
+            "dataType": "int64",
+            "sourceColumn": "TaskAuditKey",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "TaskAuditKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TaskKey",
+            "dataType": "int64",
+            "sourceColumn": "TaskKey",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "TaskKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RequestedStatus",
+            "dataType": "string",
+            "sourceColumn": "RequestedStatus",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "RequestedStatus",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RequestedStartTime",
+            "dataType": "dateTime",
+            "sourceColumn": "RequestedStartTime",
+            "formatString": "General Date",
+            "sourceProviderType": "datetime2",
+            "sourceLineageTag": "RequestedStartTime",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "Processed",
+            "dataType": "boolean",
+            "sourceColumn": "Processed",
+            "formatString": "\"TRUE\";\"TRUE\";\"FALSE\"",
+            "sourceProviderType": "bit",
+            "sourceLineageTag": "Processed",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "ProcessedTime",
+            "dataType": "dateTime",
+            "sourceColumn": "ProcessedTime",
+            "formatString": "General Date",
+            "sourceProviderType": "datetime2",
+            "sourceLineageTag": "ProcessedTime",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "CompanyId",
+            "dataType": "int64",
+            "sourceColumn": "CompanyId",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "CompanyId",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "LogMessage",
+            "dataType": "string",
+            "sourceColumn": "LogMessage",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "LogMessage",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RowsRead",
+            "dataType": "int64",
+            "sourceColumn": "RowsRead",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "RowsRead",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RowsUpdated",
+            "dataType": "int64",
+            "sourceColumn": "RowsUpdated",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "RowsUpdated",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RowsInserted",
+            "dataType": "int64",
+            "sourceColumn": "RowsInserted",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "RowsInserted",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RowsDeleted",
+            "dataType": "int64",
+            "sourceColumn": "RowsDeleted",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "RowsDeleted",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RequestedEndTime",
+            "dataType": "dateTime",
+            "sourceColumn": "RequestedEndTime",
+            "formatString": "General Date",
+            "sourceProviderType": "datetime2",
+            "sourceLineageTag": "RequestedEndTime",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "{{Partition_Name}}",
+            "mode": "directLake",
+            "source": {
+              "type": "entity",
+              "entityName": "TaskAuditStage",
+              "expressionSource": "DatabaseQuery",
+              "schemaName": "etl"
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "IsTableInBiModel",
+            "value": "False"
+          }
+        ]
+      },
+      {
+        "name": "TaskAudit",
+        "sourceLineageTag": "[etl].[TaskAudit]",
+        "columns": [
+          {
+            "name": "TaskAuditKey",
+            "dataType": "int64",
+            "sourceColumn": "TaskAuditKey",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "TaskAuditKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "JobAuditKey",
+            "dataType": "int64",
+            "sourceColumn": "JobAuditKey",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "JobAuditKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TaskKey",
+            "dataType": "int64",
+            "sourceColumn": "TaskKey",
+            "formatString": "0",
+            "sourceProviderType": "int",
+            "sourceLineageTag": "TaskKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TaskType",
+            "dataType": "string",
+            "sourceColumn": "TaskType",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "TaskType",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TaskRunOrderNbr",
+            "dataType": "int64",
+            "sourceColumn": "TaskRunOrderNbr",
+            "formatString": "0",
+            "sourceProviderType": "int",
+            "sourceLineageTag": "TaskRunOrderNbr",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "Status",
+            "dataType": "string",
+            "sourceColumn": "Status",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "Status",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "IsRunning",
+            "dataType": "boolean",
+            "sourceColumn": "IsRunning",
+            "formatString": "\"TRUE\";\"TRUE\";\"FALSE\"",
+            "sourceProviderType": "bit",
+            "sourceLineageTag": "IsRunning",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "StartTime",
+            "dataType": "dateTime",
+            "sourceColumn": "StartTime",
+            "formatString": "General Date",
+            "sourceProviderType": "datetime2",
+            "sourceLineageTag": "StartTime",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "EndTime",
+            "dataType": "dateTime",
+            "sourceColumn": "EndTime",
+            "formatString": "General Date",
+            "sourceProviderType": "datetime2",
+            "sourceLineageTag": "EndTime",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RowsRead",
+            "dataType": "int64",
+            "sourceColumn": "RowsRead",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "RowsRead",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RowsCopied",
+            "dataType": "int64",
+            "sourceColumn": "RowsCopied",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "RowsCopied",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RowsSkipped",
+            "dataType": "int64",
+            "sourceColumn": "RowsSkipped",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "RowsSkipped",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RowsInserted",
+            "dataType": "int64",
+            "sourceColumn": "RowsInserted",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "RowsInserted",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RowsUpdated",
+            "dataType": "int64",
+            "sourceColumn": "RowsUpdated",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "RowsUpdated",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RowsDeleted",
+            "dataType": "int64",
+            "sourceColumn": "RowsDeleted",
+            "formatString": "0",
+            "sourceProviderType": "bigint",
+            "sourceLineageTag": "RowsDeleted",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TaskVariables",
+            "dataType": "string",
+            "sourceColumn": "TaskVariables",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "TaskVariables",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "DebugString",
+            "dataType": "string",
+            "sourceColumn": "DebugString",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "DebugString",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "PipelineRunID",
+            "dataType": "string",
+            "sourceColumn": "PipelineRunID",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "PipelineRunID",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "LastUpdated",
+            "dataType": "dateTime",
+            "sourceColumn": "LastUpdated",
+            "formatString": "General Date",
+            "sourceProviderType": "datetime2",
+            "sourceLineageTag": "LastUpdated",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "{{Partition_Name}}",
+            "mode": "directLake",
+            "source": {
+              "type": "entity",
+              "entityName": "TaskAudit",
+              "expressionSource": "DatabaseQuery",
+              "schemaName": "etl"
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "IsTableInBiModel",
+            "value": "True"
+          }
+        ]
+      },
+      {
+        "name": "Task",
+        "sourceLineageTag": "[etl].[Task]",
+        "columns": [
+          {
+            "name": "TaskKey",
+            "dataType": "int64",
+            "sourceColumn": "TaskKey",
+            "formatString": "0",
+            "sourceProviderType": "int",
+            "sourceLineageTag": "TaskKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TaskRunOrderNbr",
+            "dataType": "int64",
+            "sourceColumn": "TaskRunOrderNbr",
+            "formatString": "0",
+            "sourceProviderType": "int",
+            "sourceLineageTag": "TaskRunOrderNbr",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "JobKey",
+            "dataType": "int64",
+            "sourceColumn": "JobKey",
+            "formatString": "0",
+            "sourceProviderType": "int",
+            "sourceLineageTag": "JobKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "ParentSourceName",
+            "dataType": "string",
+            "sourceColumn": "ParentSourceName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "ParentSourceName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceName",
+            "dataType": "string",
+            "sourceColumn": "SourceName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceType",
+            "dataType": "string",
+            "sourceColumn": "SourceType",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceType",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TaskName",
+            "dataType": "string",
+            "sourceColumn": "TaskName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "TaskName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TaskType",
+            "dataType": "string",
+            "sourceColumn": "TaskType",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "TaskType",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkLoadMethod",
+            "dataType": "string",
+            "sourceColumn": "SinkLoadMethod",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkLoadMethod",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "PrimaryKeyColumnList",
+            "dataType": "string",
+            "sourceColumn": "PrimaryKeyColumnList",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "PrimaryKeyColumnList",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "IsWatermarkEnabledFlag",
+            "dataType": "boolean",
+            "sourceColumn": "IsWatermarkEnabledFlag",
+            "formatString": "\"TRUE\";\"TRUE\";\"FALSE\"",
+            "sourceProviderType": "bit",
+            "sourceLineageTag": "IsWatermarkEnabledFlag",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceWatermarkColumn",
+            "dataType": "string",
+            "sourceColumn": "SourceWatermarkColumn",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceWatermarkColumn",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkWatermarkColumn",
+            "dataType": "string",
+            "sourceColumn": "SinkWatermarkColumn",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkWatermarkColumn",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceWorkspaceName",
+            "dataType": "string",
+            "sourceColumn": "SourceWorkspaceName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceWorkspaceName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceLakehouseName",
+            "dataType": "string",
+            "sourceColumn": "SourceLakehouseName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceLakehouseName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceWarehouseName",
+            "dataType": "string",
+            "sourceColumn": "SourceWarehouseName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceWarehouseName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceDatabaseName",
+            "dataType": "string",
+            "sourceColumn": "SourceDatabaseName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceDatabaseName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceSchemaName",
+            "dataType": "string",
+            "sourceColumn": "SourceSchemaName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceSchemaName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceTableName",
+            "dataType": "string",
+            "sourceColumn": "SourceTableName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceTableName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkWorkspaceName",
+            "dataType": "string",
+            "sourceColumn": "SinkWorkspaceName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkWorkspaceName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkWorkspaceId",
+            "dataType": "string",
+            "sourceColumn": "SinkWorkspaceId",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkWorkspaceId",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkLakehouseName",
+            "dataType": "string",
+            "sourceColumn": "SinkLakehouseName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkLakehouseName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkLakehouseId",
+            "dataType": "string",
+            "sourceColumn": "SinkLakehouseId",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkLakehouseId",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkWarehouseName",
+            "dataType": "string",
+            "sourceColumn": "SinkWarehouseName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkWarehouseName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkSchemaName",
+            "dataType": "string",
+            "sourceColumn": "SinkSchemaName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkSchemaName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SinkTableName",
+            "dataType": "string",
+            "sourceColumn": "SinkTableName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SinkTableName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceFlatfileConnectionSettings",
+            "dataType": "string",
+            "sourceColumn": "SourceFlatfileConnectionSettings",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceFlatfileConnectionSettings",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "NotebookKey",
+            "dataType": "int64",
+            "sourceColumn": "NotebookKey",
+            "formatString": "0",
+            "sourceProviderType": "int",
+            "sourceLineageTag": "NotebookKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RawStoragePath",
+            "dataType": "string",
+            "sourceColumn": "RawStoragePath",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "RawStoragePath",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "RawStorageFileName",
+            "dataType": "string",
+            "sourceColumn": "RawStorageFileName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "RawStorageFileName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "ArchiveOriginalFilesFlag",
+            "dataType": "boolean",
+            "sourceColumn": "ArchiveOriginalFilesFlag",
+            "formatString": "\"TRUE\";\"TRUE\";\"FALSE\"",
+            "sourceProviderType": "bit",
+            "sourceLineageTag": "ArchiveOriginalFilesFlag",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "ArchiveStoragePath",
+            "dataType": "string",
+            "sourceColumn": "ArchiveStoragePath",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "ArchiveStoragePath",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "ArchiveStorageFileName",
+            "dataType": "string",
+            "sourceColumn": "ArchiveStorageFileName",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "ArchiveStorageFileName",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "IsActiveFlag",
+            "dataType": "boolean",
+            "sourceColumn": "IsActiveFlag",
+            "formatString": "\"TRUE\";\"TRUE\";\"FALSE\"",
+            "sourceProviderType": "bit",
+            "sourceLineageTag": "IsActiveFlag",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceExtractionMethod",
+            "dataType": "string",
+            "sourceColumn": "SourceExtractionMethod",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceExtractionMethod",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "OverrideQuery",
+            "dataType": "string",
+            "sourceColumn": "OverrideQuery",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "OverrideQuery",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SourceWhereClause",
+            "dataType": "string",
+            "sourceColumn": "SourceWhereClause",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "SourceWhereClause",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "{{Partition_Name}}",
+            "mode": "directLake",
+            "source": {
+              "type": "entity",
+              "entityName": "Task",
+              "expressionSource": "DatabaseQuery",
+              "schemaName": "etl"
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "IsTableInBiModel",
+            "value": "False"
+          }
+        ]
+      },
+      {
+        "name": "Watermark",
+        "sourceLineageTag": "[etl].[Watermark]",
+        "columns": [
+          {
+            "name": "TaskKey",
+            "dataType": "int64",
+            "sourceColumn": "TaskKey",
+            "formatString": "0",
+            "sourceProviderType": "int",
+            "sourceLineageTag": "TaskKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "HighWatermarkValue",
+            "dataType": "string",
+            "sourceColumn": "HighWatermarkValue",
+            "sourceProviderType": "varchar",
+            "sourceLineageTag": "HighWatermarkValue",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "FileTaskKey",
+            "dataType": "int64",
+            "sourceColumn": "FileTaskKey",
+            "formatString": "0",
+            "sourceProviderType": "int",
+            "sourceLineageTag": "FileTaskKey",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "{{Partition_Name}}",
+            "mode": "directLake",
+            "source": {
+              "type": "entity",
+              "entityName": "Watermark",
+              "expressionSource": "DatabaseQuery",
+              "schemaName": "etl"
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "IsTableInBiModel",
+            "value": "False"
+          }
+        ]
+      }
+    ],
+    "expressions": [
+      {
+        "name": "DatabaseQuery",
+        "kind": "m",
+        "expression": "let\n    database = {{TDS_Endpoint}}\nin\n    database\n"
+      }
+    ],
+    "annotations": [
+      {
+        "name": "__PBI_TimeIntelligenceEnabled",
+        "value": "0"
+      },
+      {
+        "name": "SourceLineageTagType",
+        "value": "DatabaseFullyQualifiedName"
+      }
+    ]
+  }
+}

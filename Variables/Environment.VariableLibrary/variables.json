@@ -1,0 +1,47 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/variableLibrary/definition/variables/1.0.0/schema.json",
+  "variables": [
+    {
+      "name": "WorkspaceName",
+      "note": "",
+      "type": "String",
+      "value": "Dev - Crimson"
+    },
+    {
+      "name": "DBProdConnectionID",
+      "note": "",
+      "type": "String",
+      "value": "355469f3-c2c9-46ff-b971-134188715489"
+    },
+    {
+      "name": "KnowBe4Connection",
+      "note": "",
+      "type": "String",
+      "value": "a54b02f3-2c8f-4c89-8578-6caae282fd91"
+    },
+    {
+      "name": "WokspaceID",
+      "note": "",
+      "type": "String",
+      "value": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+    },
+    {
+      "name": "RawLakehouseID",
+      "note": "",
+      "type": "String",
+      "value": "920a12cc-7104-4013-a2a3-d7baa57e9e3f"
+    },
+    {
+      "name": "BronzeLakehouseID",
+      "note": "",
+      "type": "String",
+      "value": "13ef97da-5da2-466d-8c5f-2a70572c6558"
+    },
+    {
+      "name": "CuratedLakehouseID",
+      "note": "",
+      "type": "String",
+      "value": "e9fc4e80-ff69-4d45-bbdd-892592889465"
+    }
+  ]
+}
