@@ -11,9 +11,9 @@
 
 # PARAMETERS CELL ********************
 
-WorkspaceName = "Crimson - Dev"
-NotebookName = None
-LakehouseName = None
+WorkspaceName = "Dev - Crimson"
+NotebookName = 'KnowBe4PhishingData'
+LakehouseName = 'lh_raw'
 
 # METADATA ********************
 

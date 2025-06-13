@@ -22,8 +22,72 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "RawToBronze",
+        "name": "CrimsonXBronze",
         "dependsOn": []
+      },
+      {
+        "type": "InvokePipeline",
+        "typeProperties": {
+          "parameters": {
+            "JobName": "CrimsonXSilver"
+          },
+          "waitOnCompletion": true,
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "pipelineId": "ad5a99c8-d9e9-becf-4a6d-a582015ba66f",
+          "operationType": "InvokeFabricPipeline"
+        },
+        "externalReferences": {
+          "connection": "290e4f95-a241-483c-8b77-097a3a7efe58"
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "CrimsonXSilver",
+        "dependsOn": [
+          {
+            "activity": "CrimsonXBronze",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "InvokePipeline",
+        "typeProperties": {
+          "parameters": {
+            "JobName": "CrimsonXGold"
+          },
+          "waitOnCompletion": true,
+          "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced",
+          "pipelineId": "015ba66f-a582-4a6d-becf-d9e9ad5a99c8",
+          "operationType": "InvokeFabricPipeline"
+        },
+        "externalReferences": {
+          "connection": "290e4f95-a241-483c-8b77-097a3a7efe58"
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "CrimsonXGold",
+        "state": "Inactive",
+        "onInactiveMarkAs": "Succeeded",
+        "dependsOn": [
+          {
+            "activity": "CrimsonXSilver",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
       }
     ]
   }

@@ -107,13 +107,13 @@
               ]
             },
             {
-              "value": "factset",
+              "value": "parquet",
               "activities": [
                 {
                   "type": "ExecutePipeline",
                   "typeProperties": {
                     "pipeline": {
-                      "referenceName": "bb36f4b7-d42b-b05d-4d71-9591f051aad8",
+                      "referenceName": "e1a3889e-cea5-a545-412d-6d532c1641e0",
                       "type": "PipelineReference"
                     },
                     "parameters": {
@@ -121,10 +121,7 @@
                         "value": "@pipeline().parameters.TaskAuditKey",
                         "type": "Expression"
                       },
-                      "ETLLoadDateTime": {
-                        "value": "@pipeline().parameters.EtlLoadDateTime",
-                        "type": "Expression"
-                      },
+                      "ETLLoadDateTime": "45",
                       "TaskKey": {
                         "value": "@pipeline().parameters.TaskKey",
                         "type": "Expression"
@@ -135,7 +132,7 @@
                   "policy": {
                     "secureInput": false
                   },
-                  "name": "05_pl_factset",
+                  "name": "pl_parquet",
                   "dependsOn": []
                 }
               ]

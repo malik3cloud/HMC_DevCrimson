@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "temppipeline_for_fundtrades"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "aa2afbb6-fc4a-986e-420f-be730258da39"
+  }
+}

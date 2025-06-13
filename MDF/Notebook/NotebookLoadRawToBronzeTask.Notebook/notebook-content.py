@@ -6,24 +6,22 @@
 # META   "kernel_info": {
 # META     "name": "synapse_pyspark"
 # META   },
-# META   "dependencies": {}
+# META   "dependencies": {
+# META     "lakehouse": {
+# META       "default_lakehouse": "13ef97da-5da2-466d-8c5f-2a70572c6558",
+# META       "default_lakehouse_name": "lh_bronze",
+# META       "default_lakehouse_workspace_id": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced",
+# META       "known_lakehouses": [
+# META         {
+# META           "id": "13ef97da-5da2-466d-8c5f-2a70572c6558"
+# META         }
+# META       ]
+# META     }
+# META   }
 # META }
 
-# PARAMETERS CELL ********************
+# MARKDOWN ********************
 
-# This cell is generated from runtime parameters. Learn more: https://go.microsoft.com/fwlink/?linkid=2161015
-TaskKey = 9
-TaskList = "{\"JobAuditKey\":154,\"TaskKey\":9,\"TaskType\":\"DatabaseTask\",\"SourceName\":\"Database\",\"SourceType\":\"sqlserver\",\"SourceDatabaseName\":\"SQLServer CrimsonX - Prod\",\"SourceSchemaName\":\"dbo\",\"SourceTableName\":\"FundTradeType\",\"PrimaryKeyColumnList\":\"\",\"RawStoragePath\":\"CrimsonX\",\"RawStorageFileName\":\"FundTradeType\",\"ArchiveOriginalFilesFlag\":true,\"ArchiveStoragePath\":null,\"ArchiveStorageFileName\":\"FundTradeType\",\"BronzeWorkspaceName\":\"Dev - Crimson\",\"BronzeLakehouseName\":\"lh_bronze\",\"BronzeSchemaName\":\"Bronze\",\"BronzeTableName\":\"CrimsonXFundTradeType\",\"BronzeLoadMethod\":\"overwrite\",\"BronzeWorkspaceId\":null,\"BronzeLakehouseId\":null,\"WatermarkColumn\":\"ETLLoadDateTime\",\"SinkTableName\":\"CrimsonXFundTradeType\",\"SinkSchemaName\":\"Bronze\",\"SinkWatermarkColumn\":\"ETLLoadDateTime\",\"SinkLoadMethod\":\"overwrite\",\"IsWatermarkEnabledFlag\":false}"
-GlobalConfig = "[{\"ConfigKey\":\"SPJobAuditStartLock\",\"ConfigValue\":\"0\"},{\"ConfigKey\":\"CuratedLakehouseId\",\"ConfigValue\":\"e9fc4e80-ff69-4d45-bbdd-892592889465\"},{\"ConfigKey\":\"BronzeLakehouseId\",\"ConfigValue\":\"13ef97da-5da2-466d-8c5f-2a70572c6558\"},{\"ConfigKey\":\"Dev - Crimson\",\"ConfigValue\":\"33535eb8-4d07-49bc-b3a5-cc91d3aa6ced\"},{\"ConfigKey\":\"RawLakehouseId\",\"ConfigValue\":\"920a12cc-7104-4013-a2a3-d7baa57e9e3f\"}]"
-
-
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
 
 # CELL ********************
 
@@ -69,11 +67,14 @@ spark.conf.set("spark.databricks.delta.schema.autoMerge.enabled", "true")
 # META   "language_group": "synapse_pyspark"
 # META }
 
-# CELL ********************
+# PARAMETERS CELL ********************
 
-#TaskList = ''
-#WatermarkList = ''
-#GlobalConfig = ''
+TaskList = ''
+WatermarkList = ''
+# GUIDList = ''
+BronzeLhId = ''
+WorkspaceId = ''
+RawLhId= ''
 
 # METADATA ********************
 
@@ -84,7 +85,6 @@ spark.conf.set("spark.databricks.delta.schema.autoMerge.enabled", "true")
 
 # CELL ********************
 
-print(TaskList)
 # Convert JSON String to list
 tasklist = [json.loads(TaskList)]
 # watermarklist = json.loads(WatermarkList)
@@ -198,10 +198,7 @@ def unify_hwm_column(df, hwm_column):
 
 # CELL ********************
 
-from notebookutils import fs
-from delta.tables import DeltaTable
-# Initialize Spark
-spark = SparkSession.builder.getOrCreate()
+
 
 return_value = []
 
@@ -215,7 +212,13 @@ def process_task(task, etlloadtime):
         target_table = task['SinkTableName']
         target_schema = task['SinkSchemaName']
         target_path = f"{bronze_lh_basepath}/Tables/{target_schema}/{target_table}"
-        hwm_column = task['SinkWatermarkColumn']
+        hwm_column_raw = task['SinkWatermarkColumn']
+        hwm_column = (
+            "ETLLoadDateTime"
+            if not hwm_column_raw or str(hwm_column_raw).strip().upper() == "NULL"
+            else hwm_column_raw
+        )
+        print(f"[debug] TaskKey {task['TaskKey']}: Raw SinkWatermarkColumn = '{hwm_column_raw}', Using = '{hwm_column}'")
         primary_column = task['PrimaryKeyColumnList']
         method = task['SinkLoadMethod']
         # hwm_value = next((item["HighWatermarkValue"] for item in watermarklist if item["TaskKey"] == task["TaskKey"]), None)
@@ -234,20 +237,17 @@ def process_task(task, etlloadtime):
         RowsRead = df_source.count()
 
         # Determine primary keys: if primary_column is None, use all columns as primary keys
-        if not primary_column:
+        if not primary_column or str(primary_column).strip().upper() == "NULL":
             primary_keys = df_source.columns  # all columns
+            print('No primary column')
         else:
             primary_keys = [col.strip() for col in (primary_column.split(",") if isinstance(primary_column, str) else primary_column)]
+            print('checkpoint')
+
 
         # Deduplicate based on the primary keys
         df_source = df_source.dropDuplicates(primary_keys)
         print(f"[debug] Columns after reading and dedup: {df_source.columns}")
-
-        df_source, rename_map = sanitize_column_names_with_mapping(df_source)
-        print(f"[debug] Columns after sanitizing: {df_source.columns}")
-
-        df_source = unify_hwm_column(df_source, hwm_column)
-        print(f"[debug] Columns after unifying: {df_source.columns}")
 
         df_source.createOrReplaceTempView("df_source_view")
 
@@ -292,6 +292,15 @@ def process_task(task, etlloadtime):
                 USING DELTA
                 LOCATION '{target_path}'
             """)
+            RowsRead = df_source.count()
+            RowsUpdated = 0
+            RowsDeleted = 0
+            return {
+                "RowsRead": RowsRead,
+                "RowsInserted": RowsRead,
+                "RowsUpdated": RowsUpdated,
+                "RowsDeleted": RowsDeleted
+            }
 
         elif method == 'overwrite':
             print(f"\nOverwriting existing table at: {target_path}")
@@ -302,6 +311,15 @@ def process_task(task, etlloadtime):
                     print(f"[ERROR] Failed to add watermark column '{hwm_column}': {e}")
                     raise
             df_source.write.format("delta").mode("overwrite").save(target_path)
+            RowsRead = df_source.count()
+            RowsUpdated = 0
+            RowsDeleted = 0
+            return {
+                "RowsRead": RowsRead,
+                "RowsInserted": RowsRead,
+                "RowsUpdated": RowsUpdated,
+                "RowsDeleted": RowsDeleted
+            }
 
         elif method == 'append':
             print(f"\nAppending to existing table at: {target_path}")
@@ -312,6 +330,15 @@ def process_task(task, etlloadtime):
                     print(f"[ERROR] Failed to add watermark column '{hwm_column}': {e}")
                     raise
             df_source.write.format("delta").mode("append").save(target_path)
+            RowsRead = df_source.count()
+            RowsUpdated = 0
+            RowsDeleted = 0
+            return {
+                "RowsRead": RowsRead,
+                "RowsInserted": RowsRead,
+                "RowsUpdated": RowsUpdated,
+                "RowsDeleted": RowsDeleted
+            }
         
         else:
             print(f"Method is not overwrite or append, '{method}' — performing merge")
@@ -475,36 +502,17 @@ loaded_files = []
 
 for task_item in tasklist:
     try:
-        # Get workspace and lakehouse keys from task item
-        bronze_ws_key = task_item.get('BronzeWorkspaceName')
-        raw_ws_key = task_item.get('BronzeWorkspaceName')  # Assuming same key used, correct if different
-
-        if not bronze_ws_key:
-            print(f"Task item missing 'SourceWorkspaceName': {task_item}")
-            continue
-
-
-        # Get GUIDs safely
-        BronzeWorkspaceId = get_guid_value(bronze_ws_key)
-        BronzeLakehouseId = get_guid_value('BronzeLakehouseId')
-        RawWorkspaceId = get_guid_value(raw_ws_key)
-        RawLakehouseId = get_guid_value('RawLakehouseId')
-
         # Skip if any required ID is missing
-        if not all([BronzeWorkspaceId, BronzeLakehouseId, RawWorkspaceId, RawLakehouseId]):
+        if not all([BronzeLhId, RawLhId, WorkspaceId]):
             print("Skipping due to missing required GUID(s)")
             raise Exception
             
-
         # Build paths
-        bronze_lh_basepath = get_basepath(BronzeWorkspaceId, BronzeLakehouseId)
-        raw_lh_basepath = get_basepath(RawWorkspaceId, RawLakehouseId)
+        bronze_lh_basepath = get_basepath(WorkspaceId, BronzeLhId)
+        raw_lh_basepath = get_basepath(WorkspaceId, RawLhId)
 
         # Process the task
         result = process_task(task_item, etlloadtime)
-        loaded_file = result["SourcePath"] if result else None
-        loaded_files.append(loaded_file)
-        print(f"Processed: {loaded_file}")
 
     except Exception as e:
         
@@ -591,6 +599,14 @@ def move_to_archive(file_path):
 #     "RowsDeleted": rows_deleted
 # }
 # notebookutils.notebook.exit(str(result))
+
+result = {
+    "RowsCopied": result["RowsRead"],
+    "RowsInserted": result["RowsInserted"],
+    "RowsUpdated": result["RowsUpdated"],
+    "RowsDeleted": result["RowsDeleted"]
+}
+notebookutils.notebook.exit(str(result))
 
 # METADATA ********************
 

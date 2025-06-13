@@ -27,6 +27,27 @@
                 "type": "Expression"
               },
               "type": "string"
+            },
+            "BronzeLhId": {
+              "value": {
+                "value": "@pipeline().libraryVariables.bronzelhid",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "RawLhId": {
+              "value": {
+                "value": "@pipeline().libraryVariables.rawlhid",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "WorkspaceId": {
+              "value": {
+                "value": "@pipeline().libraryVariables.workspaceid",
+                "type": "Expression"
+              },
+              "type": "string"
             }
           },
           "sessionTag": {
@@ -92,8 +113,6 @@
           "secureOutput": false
         },
         "name": "PipelineReturnValueRowsCopied",
-        "state": "Inactive",
-        "onInactiveMarkAs": "Succeeded",
         "dependsOn": [
           {
             "activity": "RunTaskNotebook",
@@ -206,6 +225,28 @@
       },
       "TaskList": {
         "type": "string"
+      }
+    },
+    "libraryVariables": {
+      "rawlhid": {
+        "type": "String",
+        "variableName": "RawLakehouseID",
+        "libraryName": "Environment"
+      },
+      "bronzelhid": {
+        "type": "String",
+        "variableName": "BronzeLakehouseID",
+        "libraryName": "Environment"
+      },
+      "curatedlhid": {
+        "type": "String",
+        "variableName": "CuratedLakehouseID",
+        "libraryName": "Environment"
+      },
+      "workspaceid": {
+        "type": "String",
+        "variableName": "WorkspaceID",
+        "libraryName": "Environment"
       }
     },
     "variables": {

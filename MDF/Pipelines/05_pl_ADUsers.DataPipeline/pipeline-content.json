@@ -1,0 +1,298 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[etl].[GetDatabaseTaskInfo]",
+            "storedProcedureParameters": {
+              "TaskAuditKey": {
+                "type": "Int64",
+                "value": {
+                  "value": "@pipeline().parameters.TaskAuditKey",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": true
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "GetDatabaseTaskInfo",
+        "dependsOn": []
+      },
+      {
+        "type": "Delete",
+        "typeProperties": {
+          "enableLogging": false,
+          "datasetSettings": {
+            "type": "Binary",
+            "typeProperties": {
+              "location": {
+                "type": "LakehouseLocation",
+                "folderPath": {
+                  "value": "@concat(activity('GetDatabaseTaskInfo').output.firstRow.RawStoragePath)",
+                  "type": "Expression"
+                },
+                "fileName": {
+                  "value": "@concat(activity('GetDatabaseTaskInfo').output.firstRow.RawStorageFileName,'.parquet')",
+                  "type": "Expression"
+                }
+              }
+            },
+            "linkedService": {
+              "name": "lh_raw",
+              "properties": {
+                "type": "Lakehouse",
+                "typeProperties": {
+                  "artifactId": "a57e9e3f-d7ba-a2a3-4013-7104920a12cc",
+                  "workspaceId": "00000000-0000-0000-0000-000000000000",
+                  "rootFolder": "Files"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "storeSettings": {
+            "type": "LakehouseReadSettings",
+            "recursive": true,
+            "enablePartitionDiscovery": false
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Clear Raw Folder",
+        "description": "This will be replaced by archiving  mechanism",
+        "dependsOn": [
+          {
+            "activity": "GetDatabaseTaskInfo",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Copy",
+        "typeProperties": {
+          "source": {
+            "type": "Office365Source",
+            "allowedGroups": [
+              "92b328a7-0bb9-47f9-a4b5-7ac4daf3bb13",
+              "5b0a2af0-0c1c-44fe-9233-19d31bff303f"
+            ],
+            "datasetSettings": {
+              "type": "Office365Table",
+              "typeProperties": {
+                "tableName": "BasicDataSet_v0.User_v1"
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "6cc5454e-eddb-4919-8ca4-8356c0509198"
+              },
+              "annotations": []
+            }
+          },
+          "sink": {
+            "type": "LakehouseTableSink",
+            "tableActionOption": "OverwriteSchema",
+            "partitionOption": "None",
+            "datasetSettings": {
+              "type": "LakehouseTable",
+              "typeProperties": {
+                "table": "RawOffice365Users"
+              },
+              "schema": [],
+              "linkedService": {
+                "name": "lh_raw",
+                "properties": {
+                  "type": "Lakehouse",
+                  "typeProperties": {
+                    "artifactId": "a57e9e3f-d7ba-a2a3-4013-7104920a12cc",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                    "rootFolder": "Tables"
+                  },
+                  "annotations": []
+                }
+              },
+              "annotations": []
+            }
+          },
+          "translator": {
+            "type": "TabularTranslator",
+            "mappings": [
+              {
+                "source": {
+                  "name": "accountEnabled",
+                  "type": "Boolean",
+                  "physicalType": "boolean"
+                },
+                "sink": {
+                  "name": "accountEnabled",
+                  "physicalType": "boolean"
+                }
+              },
+              {
+                "source": {
+                  "name": "department",
+                  "type": "String",
+                  "physicalType": "string"
+                },
+                "sink": {
+                  "name": "department",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "givenName",
+                  "type": "String",
+                  "physicalType": "string"
+                },
+                "sink": {
+                  "name": "givenName",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "mail",
+                  "type": "String",
+                  "physicalType": "string"
+                },
+                "sink": {
+                  "name": "mail",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "mobilePhone",
+                  "type": "String",
+                  "physicalType": "string"
+                },
+                "sink": {
+                  "name": "mobilePhone",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "surname",
+                  "type": "String",
+                  "physicalType": "string"
+                },
+                "sink": {
+                  "name": "surname",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "userPrincipalName",
+                  "type": "String",
+                  "physicalType": "string"
+                },
+                "sink": {
+                  "name": "userPrincipalName",
+                  "physicalType": "string"
+                }
+              }
+            ],
+            "typeConversion": true,
+            "typeConversionSettings": {
+              "allowDataTruncation": true,
+              "treatBooleanAsNumber": false
+            },
+            "columnFlattenSettings": {
+              "treatArrayAsString": false,
+              "treatStructAsString": false,
+              "flattenColumnDelimiter": "."
+            }
+          },
+          "enableStaging": true
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Office365User",
+        "dependsOn": [
+          {
+            "activity": "Clear Raw Folder",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "TaskAuditKey": {
+        "type": "int"
+      },
+      "TaskQuery": {
+        "type": "string"
+      },
+      "ETLLoadDateTime": {
+        "type": "string"
+      },
+      "TaskKey": {
+        "type": "string"
+      }
+    },
+    "libraryVariables": {
+      "CrimsonX": {
+        "type": "String",
+        "variableName": "CrimsonX",
+        "libraryName": "Environment"
+      },
+      "HMCDataWarehouse": {
+        "type": "String",
+        "variableName": "HMCDataWarehouse",
+        "libraryName": "Environment"
+      }
+    },
+    "variables": {
+      "DBConnectionString": {
+        "type": "String"
+      }
+    }
+  }
+}

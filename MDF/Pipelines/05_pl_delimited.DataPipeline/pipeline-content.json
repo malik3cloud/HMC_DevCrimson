@@ -330,6 +330,20 @@
               },
               "type": "string"
             },
+            "RawLhId": {
+              "value": {
+                "value": "@pipeline().libraryVariables.rawlhid",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "WorkspaceId": {
+              "value": {
+                "value": "@pipeline().libraryVariables.workspaceid",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
             "GUIDList": {
               "value": {
                 "value": "@string(activity('GetGlobalConfig').output.value)",
@@ -411,6 +425,18 @@
       },
       "TaskKey": {
         "type": "string"
+      }
+    },
+    "libraryVariables": {
+      "rawlhid": {
+        "type": "String",
+        "variableName": "RawLakehouseID",
+        "libraryName": "Environment"
+      },
+      "workspaceid": {
+        "type": "String",
+        "variableName": "WorkspaceID",
+        "libraryName": "Environment"
       }
     },
     "variables": {

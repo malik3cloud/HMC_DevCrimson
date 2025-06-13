@@ -186,6 +186,62 @@
                   "dependsOn": []
                 }
               ]
+            },
+            {
+              "value": "SilverTransformation",
+              "activities": [
+                {
+                  "type": "ExecutePipeline",
+                  "typeProperties": {
+                    "pipeline": {
+                      "referenceName": "05e28230-150a-99c9-4620-5f47d1fd23b5",
+                      "type": "PipelineReference"
+                    },
+                    "parameters": {
+                      "TaskKey": {
+                        "value": "@activity('TaskAuditStart').output.firstRow.TaskKey",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true
+                  },
+                  "policy": {
+                    "secureInput": false
+                  },
+                  "name": "pl_silver_transformation_task",
+                  "dependsOn": []
+                }
+              ]
+            },
+            {
+              "value": "NotebookTask",
+              "activities": [
+                {
+                  "type": "ExecutePipeline",
+                  "typeProperties": {
+                    "pipeline": {
+                      "referenceName": "59a946ed-f8a5-9bfe-45ad-a6fe9b17ad54",
+                      "type": "PipelineReference"
+                    },
+                    "parameters": {
+                      "TaskAuditKey": {
+                        "value": "@pipeline().parameters.TaskAuditKey",
+                        "type": "Expression"
+                      },
+                      "TaskKey": {
+                        "value": "@activity('TaskAuditStart').output.firstRow.TaskKey",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true
+                  },
+                  "policy": {
+                    "secureInput": false
+                  },
+                  "name": "pl_Notebook_Task",
+                  "dependsOn": []
+                }
+              ]
             }
           ],
           "defaultActivities": [
@@ -292,6 +348,9 @@
       },
       "EtlLoadDateTime": {
         "type": "string"
+      },
+      "TaskKey": {
+        "type": "int"
       }
     }
   }

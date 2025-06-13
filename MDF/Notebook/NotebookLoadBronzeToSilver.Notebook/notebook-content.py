@@ -14,6 +14,9 @@
 # META       "known_lakehouses": [
 # META         {
 # META           "id": "e9fc4e80-ff69-4d45-bbdd-892592889465"
+# META         },
+# META         {
+# META           "id": "13ef97da-5da2-466d-8c5f-2a70572c6558"
 # META         }
 # META       ]
 # META     }
@@ -56,24 +59,6 @@ spark.conf.set("spark.sql.parquet.datetimeRebaseModeInRead", "CORRECTED")
 spark.conf.set("spark.sql.parquet.datetimeRebaseModeInWrite", "CORRECTED")
 spark.conf.set("spark.sql.analyzer.maxIterations", 1000)
 spark.conf.set("spark.databricks.delta.schema.autoMerge.enabled", "true")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-# This cell is generated from runtime parameters. Learn more: https://go.microsoft.com/fwlink/?linkid=2161015
-TaskList = "[{\"TaskKey\":29,\"TaskRunOrderNbr\":1,\"JobKey\":2,\"ParentSourceName\":\"Database\",\"SourceName\":\"Bronze\",\"SourceType\":\"Lakehouse\",\"TaskName\":\"CrimsonXIndexRegionExposure\",\"TaskType\":\"BronzeToSilver\",\"SinkLoadMethod\":\"overwrite\",\"PrimaryKeyColumnList\":\"NULL\",\"IsWatermarkEnabledFlag\":true,\"SourceWatermarkColumn\":\"ETLLoadDateTime\",\"SinkWatermarkColumn\":\"ETLLoadDateTime\",\"SourceWorkspaceName\":\"Dev - Crimson\",\"SourceLakehouseName\":\"lh_bronze\",\"SourceWarehouseName\":\"NULL\",\"SourceDatabaseName\":\"NULL\",\"SourceSchemaName\":\"Bronze\",\"SourceTableName\":\"CrimsonXIndexRegionExposure\",\"SinkWorkspaceName\":\"Dev - Crimson\",\"SinkWorkspaceId\":\"NULL\",\"SinkLakehouseName\":\"lh_curated\",\"SinkLakehouseId\":\"NULL\",\"SinkWarehouseName\":\"NULL\",\"SinkSchemaName\":\"Silver\",\"SinkTableName\":\"CrimsonXIndexRegionExposure\",\"SourceFlatfileConnectionSettings\":\"NULL\",\"NotebookKey\":0,\"RawStoragePath\":\"NULL\",\"RawStorageFileName\":\"NULL\",\"ArchiveOriginalFilesFlag\":true,\"ArchiveStoragePath\":\"NULL\",\"ArchiveStorageFileName\":\"NULL\",\"IsActiveFlag\":true,\"SourceExtractionMethod\":\"NULL\",\"OverrideQuery\":\"NULL\",\"SourceWhereClause\":\"NULL\"}]"
-WatermarkList = "[{\"TaskKey\":29,\"TaskRunOrderNbr\":1,\"JobKey\":2,\"ParentSourceName\":\"Database\",\"SourceName\":\"Bronze\",\"SourceType\":\"Lakehouse\",\"TaskName\":\"CrimsonXIndexRegionExposure\",\"TaskType\":\"BronzeToSilver\",\"SinkLoadMethod\":\"overwrite\",\"PrimaryKeyColumnList\":\"NULL\",\"IsWatermarkEnabledFlag\":true,\"SourceWatermarkColumn\":\"ETLLoadDateTime\",\"SinkWatermarkColumn\":\"ETLLoadDateTime\",\"SourceWorkspaceName\":\"Dev - Crimson\",\"SourceLakehouseName\":\"lh_bronze\",\"SourceWarehouseName\":\"NULL\",\"SourceDatabaseName\":\"NULL\",\"SourceSchemaName\":\"Bronze\",\"SourceTableName\":\"CrimsonXIndexRegionExposure\",\"SinkWorkspaceName\":\"Dev - Crimson\",\"SinkWorkspaceId\":\"NULL\",\"SinkLakehouseName\":\"lh_curated\",\"SinkLakehouseId\":\"NULL\",\"SinkWarehouseName\":\"NULL\",\"SinkSchemaName\":\"Silver\",\"SinkTableName\":\"CrimsonXIndexRegionExposure\",\"SourceFlatfileConnectionSettings\":\"NULL\",\"NotebookKey\":0,\"RawStoragePath\":\"NULL\",\"RawStorageFileName\":\"NULL\",\"ArchiveOriginalFilesFlag\":true,\"ArchiveStoragePath\":\"NULL\",\"ArchiveStorageFileName\":\"NULL\",\"IsActiveFlag\":true,\"SourceExtractionMethod\":\"NULL\",\"OverrideQuery\":\"NULL\",\"SourceWhereClause\":\"NULL\"}]"
-GUIDList = None
-BronzeLhId = "13ef97da-5da2-466d-8c5f-2a70572c6558"
-CuratedLhId = "e9fc4e80-ff69-4d45-bbdd-892592889465"
-WorkspaceId = "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
-
 
 # METADATA ********************
 
@@ -259,13 +244,12 @@ def process_task(task, etlloadtime, watermarklist):
 
 
         # Read Parquet source and clean
-        df_source = spark.read.format("delta").load(source_path).dropDuplicates(primary_keys)
-        print(f"[debug] Columns after reading and dedup: {df_source.columns}")
         df_source, rename_map = sanitize_column_names_with_mapping(df_source)
         print(f"[debug] Columns after sanitizing: {df_source.columns}")
-        df_source = unify_hwm_column(df_source, hwm_column)
-        print(f"[debug] Columns after unifying: {df_source.columns}")
+        if "ETLLoadDateTime" in df_source.columns:
+            df_source = df_source.drop("ETLLoadDateTime")
         df_source.createOrReplaceTempView("df_source_view")
+        print(f"[debug] Columns after dropping HWM: {df_source.columns}")
 
         # Delta Load
         # if task['IsWatermarkEnabled'] == 1:
@@ -313,7 +297,16 @@ def process_task(task, etlloadtime, watermarklist):
                     print(f"[ERROR] Failed to add watermark column '{hwm_column}': {e}")
                     raise
             df_source.write.format("delta").mode("overwrite").save(target_path)
-            return
+            RowsRead = df_source.count()
+            RowsInserted = df_source.count()
+            RowsUpdated = 0
+            RowsDeleted = 0
+            return {
+                "RowsRead": RowsRead,
+                "RowsInserted": RowsInserted,
+                "RowsUpdated": RowsUpdated,
+                "RowsDeleted": RowsDeleted
+            }
 
         elif method == 'overwrite':
             print(f"\nOverwriting existing table at: {target_path}")
@@ -324,7 +317,16 @@ def process_task(task, etlloadtime, watermarklist):
                     print(f"[ERROR] Failed to add watermark column '{hwm_column}': {e}")
                     raise
             df_source.write.format("delta").mode("overwrite").save(target_path)
-            return
+            RowsRead = df_source.count()
+            RowsInserted = df_source.count()
+            RowsUpdated = 0
+            RowsDeleted = 0
+            return {
+                "RowsRead": RowsRead,
+                "RowsInserted": RowsInserted,
+                "RowsUpdated": RowsUpdated,
+                "RowsDeleted": RowsDeleted
+            }
 
         elif method == 'append':
             print(f"\nAppending to existing table at: {target_path}")
@@ -335,7 +337,16 @@ def process_task(task, etlloadtime, watermarklist):
                     print(f"[ERROR] Failed to add watermark column '{hwm_column}': {e}")
                     raise
             df_source.write.format("delta").mode("append").save(target_path)
-            return
+            RowsRead = df_source.count()
+            RowsInserted = df_source.count()
+            RowsUpdated = 0
+            RowsDeleted = 0
+            return {
+                "RowsRead": RowsRead,
+                "RowsInserted": RowsInserted,
+                "RowsUpdated": RowsUpdated,
+                "RowsDeleted": RowsDeleted
+            }
         
         else:
             print(f"Method is not overwrite or append, '{method}' — performing merge")
@@ -406,14 +417,12 @@ def process_task(task, etlloadtime, watermarklist):
                 """
 
             insert_columns = columns.copy()
-            if hwm_column not in insert_columns:
-                insert_columns.append(hwm_column)
-
             insert_values = [f"source.{col}" for col in columns]
+
+            # Add HWM column only if not already present
             if hwm_column not in columns:
+                insert_columns.append(hwm_column)
                 insert_values.append(f"'{etlloadtime}'")
-            else:
-                insert_values.append(f"source.{hwm_column}")
 
             merge_query += f"""
                 WHEN NOT MATCHED THEN
@@ -528,8 +537,6 @@ for task_item in tasklist:
         # Process the task
         result = process_task(task_item, etlloadtime, watermarklist)
         loaded_file = result["SourcePath"] if result else None
-        loaded_files.append(loaded_file)
-        print(f"Processed: {loaded_file}")
 
     except Exception as e:
         

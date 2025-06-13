@@ -224,7 +224,7 @@
       },
       "workspaceid": {
         "type": "String",
-        "variableName": "WokspaceID",
+        "variableName": "WorkspaceID",
         "libraryName": "Environment"
       }
     }

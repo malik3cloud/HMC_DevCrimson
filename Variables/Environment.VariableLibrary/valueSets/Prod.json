@@ -5,6 +5,10 @@
     {
       "name": "WorkspaceName",
       "value": "Prod- Crimson"
+    },
+    {
+      "name": "CrimsonX",
+      "value": "355469f3-c2c9-46ff-b971-134188715489"
     }
   ]
 }

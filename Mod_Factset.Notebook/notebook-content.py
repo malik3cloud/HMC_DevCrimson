@@ -50,6 +50,8 @@ from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 from typing import Optional, List, Dict, Any, Union
+from pyspark.sql.functions import broadcast
+
 
 spark.conf.set("spark.sql.caseSensitive","true")
 spark.conf.set("spark.sql.parquet.int96RebaseModeInRead", "CORRECTED")
@@ -80,9 +82,6 @@ spark.conf.set("spark.databricks.delta.schema.autoMerge.enabled", "true")
 # CELL ********************
 
 print(test_utils())
-# Removed logging
-# Removed user ID logging
-# Removed incremental load logic, this will be handles differently will be added once this code is complete
 
 # METADATA ********************
 
@@ -92,32 +91,6 @@ print(test_utils())
 # META }
 
 # PARAMETERS CELL ********************
-
-# PARAMETERS - These can be overridden by notebook parameters
-# Option to run only parts
-ReuseVersion     = 1
-indexIdList      = None 
-LoadStartDate    = None 
-LoadEndDate      = None
-RunLoadProcess   = 1
-RunCalcGeo       = 1
-RunGeoCorrection = 1
-RunCalcClass     = 1
-RunClassCorrection = 1
-RunApplyProcess  = 1 # -> are these always 1 or are they dependent somewhere else ?
-EventLogIdParent = None
-EventLogId       = None
-debug            = 0
-MaxInvalidCountry = 10
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
 
 # Build this from standard nbs
 bronze_lh_id = 'abfss://33535eb8-4d07-49bc-b3a5-cc91d3aa6ced@onelake.dfs.fabric.microsoft.com/13ef97da-5da2-466d-8c5f-2a70572c6558'
@@ -131,585 +104,161 @@ ic_stage_path = f"{bronze_lh_id}/Files/IndexConstituent_STAGE.parquet"
 # META   "language_group": "synapse_pyspark"
 # META }
 
-# CELL ********************
+# MARKDOWN ********************
 
-# Get Spark session
-spark = SparkSession.builder.getOrCreate()
+# From the new requirement
 
-# Initialize main process metadata
-OBJECT_NAME = "etl.HMCStaging_DataWarehouse_IndexConstituent"
-# metadata = initialize_metadata(
-#     spark=spark,
-#     object_name=OBJECT_NAME,
-#     load_name="IndexConst",
-    # load_start_date=LoadStartDate,
-    # load_end_date=LoadEndDate,
-    # event_log_id=EventLogId
-# )
+# MARKDOWN ********************
 
-# Extract metadata values for convenience
-NOW = datetime.now()
-# EventParms = f"{metadata['load_start_date'] or '<null>'}|{metadata['load_end_date'] or '<null>'}"
-
-# Get version numbers - incremental load, check if this is needeed
-# Versioning no
-# VersionNumCon = get_version_number(spark, "IndexConst", "STAGE")
-# VersionNumGeo = get_version_number(spark, "IndexGeo", "STAGE")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
+# ## IndexRegionCountry
 
 # CELL ********************
 
-"""
-Main ETL process orchestration
-Separate this process per function/table
-"""
-try:
-    # LOAD PROCESS
-    if RunLoadProcess == 1: # -> thsi will always run step by step
-        print(OBJECT_NAME, "Starting constituent load...")
-        load_index_constituent(metadata)
-        print(OBJECT_NAME, "IndexConstituent_Load complete.")
-    else:
-        print(OBJECT_NAME, "Skipping constituent load.")
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
+from pyspark.sql.functions import current_timestamp
 
-    # GEO CALCULATION
-    if RunCalcGeo == 1 or RunGeoCorrection == 1:
-        if RunCalcGeo == 1:
-            print(OBJECT_NAME, "Running GeoRegion calculation...")
-            calc_geo_region(spark, metadata)
-        if RunGeoCorrection == 1:
-            print(OBJECT_NAME, "Running GeoRegion correction...")
-            calc_geo_correction(spark, metadata)
-    else:
-        print(OBJECT_NAME, "Skipping Geo calculations.")
+def generate_index_country_exposure(
+    bronze_lh_id: str,
+    silver_lh_id: str,
+    indexid_filter: str = None
+) -> None:
+    output_path = f"{silver_lh_id}/Tables/Silver/IndexRegionCountryExposure"
+    error_path = f"{silver_lh_id}/Tables/Silver/IndexRegionCountryExposure_Error"
 
-    # CLASSIFICATION CALCULATION
-    if RunCalcClass == 1 or RunClassCorrection == 1:
-        if RunCalcClass == 1:
-            print(OBJECT_NAME, "Running Classification calculation...")
-            calc_classification(spark, metadata)
-        if RunClassCorrection == 1:
-            print(OBJECT_NAME, "Running Classification correction...")
-            calc_class_correction(spark, metadata)
-    else:
-        print(OBJECT_NAME, "Skipping Classification calculations.")
+    #load source tables
+    src_ref_index = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/HMCDataWarehousevwSourceReferenceIndex")
+    src_ref_flatten = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/HMCDataWarehousevwSourceReferenceFlatten_CrimsonX")\
+        .filter(F.col("HMCObjectSourceSystem") == "FACTSET")
+    factset = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/Factset")
+    country_region = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/CrimsonXCountryRegion")
+    geographic_strategy = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/CrimsonXGeographicStrategy")
+    country = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/CrimsonXCountry")
 
-    # APPLY PROCESS
-    if RunApplyProcess == 1:
-        print("Running Apply process for Geo and Classification...")
-        apply_geo_classification(spark, metadata)
-    else:
-        print("Skipping Apply process.")
-
-    # Finalize log
-    # finalize_etl(OBJECT_NAME)
-
-except Exception as e:
-    print(f"Error occurred: {str(e)}")
-    raise e
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-def load_index_constituent():
-    """
-    ETL Function: Index Constituent Loader (PySpark for Fabric)
-    """
-
-    # Load Raw Data (drop duplicates early)
-    raw_df = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/Factset")
-    print(f'[DEBUG] Raw Data Count: {raw_df.count()}')
-
-    index_df = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/vwsourcereferenceindex").filter(col("IndexStatus") != "Deleted")
-    print(f'[DEBUG] Index Data Count (filtered): {index_df.count()}')
-
-    ref_df = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/vwsourcereferenceflatten_crimsonx")
-    print(f'[DEBUG] Index Data Count (filtered): {ref_df.count()}')
-
-    index_df.createOrReplaceTempView("vwSourceReferenceIndex")
-    ref_df.createOrReplaceTempView("vwSourceReferenceFlatten_CrimsonX")
-
-    index_factset_df = spark.sql("""
-    SELECT vri.*,
-           vrfc.HMCObjectIdCrimsonX
-    FROM vwSourceReferenceIndex vri
-    JOIN vwSourceReferenceFlatten_CrimsonX vrfc
-        ON vri.IndexId = vrfc.HMCObjectMasterId
-    WHERE vri.IndexIdFactset IS NOT NULL
-    """)
-
-
-    # Join with LEFT join and index filtering
-    joined_df = raw_df.join(index_factset_df, raw_df["BENCHMARK_ID"] == index_factset_df["IndexIdFactset"], how="left")
-    print(f'[DEBUG] Joined Data Count: {joined_df.count()}')
-    print('[DEBUG] Sample joined data:')
-    joined_df.show(5, truncate=False)
-
-    # Compose main stage_df
-    stage_df = joined_df.select(
-        col("BENCHMARK_ID").alias("IndexIdentifier"),
-        col("SECURITY_ID").alias("SecurityIdentifier"),
-        col("CONST_WEIGHT").alias("Weight"),
-        when(
-            (col("COUNTRY_INCORP_MSCI").isNotNull()) & (lower(col("COUNTRY_INCORP_MSCI")) != "null"),
-            col("COUNTRY_INCORP_MSCI")
-        ).otherwise(col("COUNTRY_RISK")).alias("Country"),
-
-        col("DATE").alias("DataDate"),
-        # col("SourceFileName"),
-        # col("SourceFilePath"),
-        when(col("IndexIdFactset").isNotNull(), lit("Index")).alias("LoadComment"),
-        lit("Y").alias("IsValid"),
-        lit("N").alias("IsNew"),
-        lit("N").alias("IsDup"),
-        lit("N").alias("Ignore"),
-        col("IndexId"),
-        lit("").alias("SectorCode"),
-        col("FG_GICS_SECTOR").alias("SectorName"),
-        lit("").alias("IndustryCode"),
-        col("FG_GICS_INDUSTRY").alias("IndustryName"),
-        lit("").alias("IndustryGrpCode"),
-        col("FG_GICS_INDGRP").alias("IndustryGrpName"),
-        lit("").alias("SubIndustryCode"),
-        col("FG_GICS_SUBIND").alias("SubIndustryName")
-    )
-    print(f'[DEBUG] Stage Data Count (after select): {stage_df.count()}')
-    print('[DEBUG] Sample stage data:')
-    stage_df.show(5, truncate=False)
-
-    # Apply country matching
-    stage_df = apply_country_matching(stage_df, spark, bronze_lh_id)
-    print(f'[DEBUG] Stage Data Count (after country matching): {stage_df.count()}')
-    print('[DEBUG] Sample stage data after country matching:')
-    stage_df.select("Country", "CountryId").show(5, truncate=False)
-
-    # Validation rules
-    validation_rules = {
-        "CountryId": {
-            "condition": col("CountryId").isNull(),
-            "error_message": "ERROR: Country code not found."
-        },
-        "IndexId": {
-            "condition": col("IndexId").isNull(),
-            "error_message": "ERROR: Index not found."
-        }
-    }
-
-    stage_df = validate_dataframe(stage_df, validation_rules)
-    print(f'[DEBUG] Stage Data Count (after validation): {stage_df.count()}')
-    print('[DEBUG] Sample stage data after validation:')
-    stage_df.select("CountryId", "IndexId", "IsValid", "LoadComment").show(5, truncate=False)
-
-    stage_df.createOrReplaceTempView("stage")
-
-    # Country threshold revalidation
-    spark.sql("""
-    CREATE OR REPLACE TEMP VIEW tempCountryCodeCount AS
-    SELECT IndexId, SUM(CASE WHEN CountryId IS NULL THEN 1 ELSE 0 END) AS nullCountries
-    FROM stage
-    GROUP BY IndexId
-    """)
-    print('[DEBUG] tempCountryCodeCount:')
-    spark.table("tempCountryCodeCount").show()
-
-    stage_df = stage_df.alias("s") \
-        .join(spark.table("tempCountryCodeCount").alias("t"), "IndexId") \
-        .withColumn("IsValid", when(
-            (col("CountryId").isNull()) & (col("nullCountries") <= MaxInvalidCountry),
-            lit("Y")
-        ).otherwise(col("IsValid")))
-    print('[DEBUG] Final stage_df after country threshold revalidation:')
-    stage_df.select('CountryId','IsValid','Country','IndexId','nullCountries').show(10, truncate=False)
-
-    print(f'[DEBUG] Final stage_df count: {stage_df.count()}')
-
-    # Write to tables (commented out for now)
-    write_to_tables(
-        stage_df,
-        ic_stage_path,
-        "Silver.IndexConstituent",
-        "Silver.IndexConstituent_ERROR",
-        truncate_stage=False
-    )
-
-    print(f"ETL Completed at: {datetime.now()}")
-
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-load_index_constituent()
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-def calc_geo_region():
-    """
-    ETL Function: Calculate Geographic Region
-    
-    This function calculates geographic region classifications for index constituents.
-    """
-    # Initialize function-specific metadata
-    LOADNAME = 'IndexGeo'
-    
-    # Define stage paths for parquet files
-    constituent_stage_path = f"{bronze_lh_id}/Files/IndexConstituent_STAGE.parquet"
-    geo_stage_path = f"{bronze_lh_id}/Files/IndexGeography_STAGE.parquet"
-    countryreg_path =f"{bronze_lh_id}/Tables/Bronze/CrimsonXCountryRegion"
-
-    countryreg_df = spark.read.parquet(countryreg_path)
-    countryreg_df.createOrReplaceTempView("countryreg")
-
-    # Load Stage DF
-    stage_df = spark.read.parquet(ic_stage_path)
-    stage_df.createOrReplaceTempView("stage")
-    
-    # Get invalid indices to exclude
-    invalid_index_df = spark.sql("""
-        SELECT DISTINCT(COALESCE(IndexId, '00000000-0000-0000-0000-000000000000')) AS IndexId
-        FROM stage
-        WHERE IsValid = 'N'
-    """)
-
-    invalid_index_df.createOrReplaceTempView("excludeIndex")
-    
-    # Insert valid data into staging with optimizations for Fabric
-    valid_data_df = spark.sql("""
-    SELECT ic.IndexId, 
-           cr.RegionGeographicStrategyId,
-           /*ic.AsOfDate,*/
-           SUM(ic.Weight) AS ExposurePct,
-           0 AS CorrectionPct,
-           /*current_timestamp() AS UpdateTimeStamp,*/
-           'IndexGeo' AS LoadType,
-           /*'' AS LoadComment,*/
-           'etl.HMCStaging_HMCStaging_IndexConstituent_CalcGeoRegion' AS LoadProcess,
-           current_timestamp() AS LoadTimestamp,
-           'Y' AS IsValid,
-           'N' AS IsNew,
-           'N' AS IsDup,
-           'N' AS Ignore
-    FROM stage ic
-    JOIN countryreg cr ON ic.CountryId = cr.CountryID
-    WHERE ic.IndexId NOT IN (SELECT IndexId FROM excludeIndex)
-    GROUP BY ic.IndexId, /*ic.AsOfDate,*/ cr.RegionGeographicStrategyId
-""")
-    
-    # Optimize DataFrame for Fabric
-    # valid_data_df = optimize_dataframe(valid_data_df, ["IndexId", "AsOfDate"])
-    valid_data_df = optimize_dataframe(valid_data_df, ["IndexId"])
-    
-    # Add metadata columns
-    # valid_data_df = add_metadata_columns(valid_data_df, metadata)
-    
-    # Write to staging parquet
-    valid_data_df.write.mode("overwrite").parquet(geo_stage_path)
-    print(f"Inserted {valid_data_df.count()} rows to IndexGeography_STAGE")
-    
-    # Apply overrides
-    overrides_df = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/indexgeography_override") # what table?
-    stage_df = spark.read.parquet(geo_stage_path)
-    
-    # Optimize DataFrames for Fabric
-    overrides_df = optimize_dataframe(overrides_df, ["IndexIdWarehouse", "GeographicStrategyId"])
-    stage_df = optimize_dataframe(stage_df, ["IndexId", "RegionGeographicStrategyId"])
-    
-    updated_stage_df = stage_df.alias("stage") \
-        .join(overrides_df.alias("igo"), 
-              (col("stage.IndexId") == col("igo.IndexIdWarehouse")) &
-              (col("stage.RegionGeographicStrategyId") == col("igo.GeographicStrategyId")), "left") \
-        .withColumn("ExposurePct_Override", 
-                    when(col("stage.ExposurePct").isNull(), col("ExposurePct_Override"))
-                    .otherwise(col("stage.ExposurePct"))) \
-        .withColumn("CorrectionPct_Override", lit(0.00)) \
-        .withColumn("LoadComment", 
-                    when(col("ExposurePct_Override").isNotNull(),
-                         concat_ws('. ', lit("Exposure OVERRIDE"), col("igo.LoadComment")))
-                    # .otherwise(col("stage.LoadComment"))
-                    )
-    
-    # Write updated data back to staging parquet
-    updated_stage_df.write.mode("overwrite").parquet(geo_stage_path)
-    print("Overrides applied")
-    
-    # Move invalid rows to ERROR table
-    invalid_rows = spark.sql("""
-        SELECT ic.IndexId,
-               'ERROR: Invalid constituent data./' + COALESCE(ic.LoadComment, '') AS LoadComment,
-               current_timestamp() AS LoadTimestamp
-        FROM stage ic
-        JOIN excludeIndex ei ON ic.IndexId = ei.IndexId
-    """)
-    
-    invalid_rows.write.mode("append").saveAsTable("Silver.IndexGeography_ERROR")
-    
-    # Move good rows to PROCESSED table
-    good_rows = spark.read.parquet(geo_stage_path) \
-        .filter((F.col("IsValid") == "Y") & (F.col("Ignore") == "N"))
-    
-    good_rows.write.mode("append").saveAsTable("Silver.IndexGeography")
-    print("Processed rows moved to PROCESSED table")
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-calc_geo_region()
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-def calc_geo_correction():
-    """
-    ETL Function: Calculate Geographic Correction
-    
-    This function calculates correction factors for geographic region classifications.
-    """
-
-    geo_stage_path = "f{bronze_lh_id}/Files/IndexGeography_STAGE.parquet"
-    
-    # Index correction calculation with optimizations for Fabric
-    stage = spark.read.parquet("Bronze.geo_stage_path") 
-        # .filter((F.col("AsOfDate") >= F.lit(metadata['load_start_date'])))
-    
-    # Optimize DataFrame for Fabric
-    stage = optimize_dataframe(stage, ["IndexId"])
-    
-    # Inner aggregation
-    agg_stage = stage.groupBy("indexid", "GeographicStrategyid") \
-                     .agg(F.sum("exposurepct").alias("exposurepct"))
-    
-    # Outer aggregation for correction
-    correction_df = agg_stage.groupBy("indexid") \
-                             .agg((100 - F.sum("exposurepct")).alias("CorrectionPct"))
-    correction_df.createOrReplaceTempView("IndexCorrection")
-    
-    # Reset CorrectionPct to 0
-    stage = stage.alias("stage").join(
-        correction_df.alias("correct"),
-        (F.col("stage.indexid") == F.col("correct.indexid")) &
-        (F.col("stage.AsOfDate") == F.col("correct.AsOfDate")),
-        "inner"
-    ).withColumn("CorrectionPct", F.lit(0))
-    
-    # Delete old "PLUG. missing region" rows
-    stage_filtered = spark.table("dbo.IndexGeography_STAGE") \
-        .filter(
-            # (F.col("AsOfDate") >= F.lit(metadata['load_start_date'])) &
-            # (F.col("AsOfDate") <= F.lit(metadata['load_end_date'])) &
-            (F.col("LoadComment").contains("PLUG. missing region"))
+    #build index reference
+    index_ref_df = (
+        src_ref_index.alias("vri")
+        .join(
+            src_ref_flatten.alias("vrfc"),
+            F.lower(F.trim(F.col("vri.IndexId"))) == F.lower(F.trim(F.col("vrfc.HMCObjectMasterId")))
         )
-    
-    # Re-apply CorrectionPct
-    windowSpec = Window.partitionBy("IndexId").orderBy(F.desc("ExposurePct"))
-    
-    ranked = stage.withColumn("exposurerank", F.row_number().over(windowSpec)) \
-                  .filter(F.col("exposurerank") == 1)
-    
-    stage_corrected = stage.join(
-        correction_df,
-        ["indexid"]
-    ).join(
-        ranked.select("indexid", "GeographicStrategyId"),
-        ["indexid", "GeographicStrategyId"]
-    ).withColumn("CorrectionPct", F.col("CorrectionPct"))
-    
-    # Fill in missing regions
-    geo_strategies = spark.table("GeographicStrategy")
-    # unique_pairs = spark.table("dbo.IndexGeography_STAGE") \
-    #                     # .filter((F.col("AsOfDate") >= F.lit(metadata['load_start_date'])) &
-    #                     #         (F.col("AsOfDate") <= F.lit(metadata['load_end_date']))) \
-    #                     .select("indexid", "AsOfDate").distinct()
-    unique_pairs = spark.table("dbo.IndexGeography_STAGE") \
-                    .select("indexid", "AsOfDate") \
-                    .distinct()
-    
-    # Optimize DataFrames for Fabric
-    geo_strategies = optimize_dataframe(geo_strategies)
-    unique_pairs = optimize_dataframe(unique_pairs, ["indexid"])
-    
-    missing_region = geo_strategies.crossJoin(unique_pairs)
-    
-    # existing = spark.table("dbo.IndexGeography_STAGE") \
-    #                 .filter((F.col("AsOfDate") >= F.lit(metadata['load_start_date'])) &
-    #                         (F.col("AsOfDate") <= F.lit(metadata['load_end_date']))) \
-    #                 .select("indexid", "GeographicStrategyId", "AsOfDate")
-    existing = spark.table("dbo.IndexGeography_STAGE") \
-                .select("indexid", "GeographicStrategyId")
-
-    
-    # Optimize DataFrame for Fabric
-    existing = optimize_dataframe(existing, ["indexid", "GeographicStrategyId"])
-    
-    missing_to_insert = missing_region.join(
-        existing,
-        ["indexid", "GeographicStrategyId"],
-        "leftanti"
+        .join(
+            factset.alias("fc"),
+            F.col("fc.BENCHMARK_ID") == F.col("vri.IndexIdFactset"),
+            how="left"
+        )
+        .selectExpr(
+            "vrfc.HMCObjectIdCrimsonX as IndexId",
+            "vri.IndexIdFactset",
+            "fc.*"
+        )
     )
-    
-    # Add metadata columns
-    missing_to_insert = add_metadata_columns(
-        missing_to_insert.withColumn("ExposurePct", F.lit(0.0))
-                         .withColumn("CorrectionPct", F.lit(0.0)),
-        metadata,
-        load_comment="PLUG. missing region"
+    print(f"index_ref_df count: {index_ref_df.count()}")
+
+    # FactSet with IndexId and CountryID_numeric
+    factset_with_index = (
+        factset.alias("fc")
+        .join(
+            src_ref_index.alias("vri"),
+            F.col("fc.BENCHMARK_ID") == F.col("vri.IndexIdFactset")
+        )
+        .join(
+            src_ref_flatten.alias("vrfc"),
+            F.lower(F.trim(F.col("vri.IndexId"))) == F.lower(F.trim(F.col("vrfc.HMCObjectMasterId")))
+        )
+        .join(
+            country.alias("c"),
+            F.col("fc.COUNTRY_RISK") == F.col("c.ISOCode2"),
+            how="left"
+        )
+        .select(
+            "fc.BENCHMARK_ID",
+            "fc.DATE",
+            "fc.CONST_WEIGHT",
+            F.col("vrfc.HMCObjectIdCrimsonX").alias("IndexId"),
+            F.col("c.CountryID").alias("CountryID_numeric")
+        )
     )
-    
-    # Write to stage table
-    # missing_to_insert.write.mode("append").saveAsTable("dbo.IndexGeography_STAGE")
-    missing_to_insert.write.mode("append").parquet(geo_stage_path)
+    print(f"factset_with_index count: {factset_with_index.count()}")
 
-
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-calc_geo_correction()
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-def calc_classification():
-    """
-    ETL Function: Calculate Classification
-    
-    This function calculates classification data for index constituents.
-    """
-    # Initialize function-specific metadata
-    OBJECT_NAME = "etl.HMCStaging_HMCStaging_IndexConstituent_CalcClassification"
-    
-    # Get invalid indices to exclude
-    exclude_index_df = get_invalid_indices(spark)
-    
-    # Truncate staging table
-    spark.sql("TRUNCATE TABLE dbo.IndexClassification_STAGE")
-    
-    # Insert valid data into staging with optimizations for Fabric
-    valid_classification_df = spark.sql(f"""
-        SELECT 
-            ic.IndexId, ic.AsOfDate, 
-            ic.SectorCode, ic.SectorName,
-            ic.IndustryCode, ic.IndustryName,
-            ic.IndustryGrpCode, ic.IndustryGrpName,
-            ic.SubIndustryCode, ic.SubIndustryName,
-            SUM(COALESCE(ic.Weight, 0)) AS ClassificationPct,
-            0 AS CorrectionPct
-        FROM dbo.IndexConstituent_STAGE ic
-        LEFT ANTI JOIN excludeIndex x ON COALESCE(ic.IndexId, '00000000-0000-0000-0000-000000000000') = x.IndexId
-        GROUP BY 
-            ic.IndexId, ic.AsOfDate, ic.SectorCode, ic.SectorName,
-            ic.IndustryCode, ic.IndustryName,
-            ic.IndustryGrpCode, ic.IndustryGrpName,
-            ic.SubIndustryCode, ic.SubIndustryName
-    """)
-    
-    # Optimize DataFrame for Fabric
-    valid_classification_df = optimize_dataframe(valid_classification_df, ["IndexId", "AsOfDate"])
-    
-    # Add metadata columns
-    valid_classification_df = add_metadata_columns(valid_classification_df, metadata)
-    
-    # Write to staging table
-    valid_classification_df.write.mode("append").saveAsTable("dbo.IndexClassification_STAGE")
-    
-    # Data Quality Check - Null SectorName
-    stage_df = spark.table("dbo.IndexClassification_STAGE")
-    stage_df = stage_df.withColumn(
-        "IsValid", 
-        when(col("SectorName").isNull(), lit("N")).otherwise(col("IsValid"))
-    ).withColumn(
-        "LoadComment",
-        when(col("SectorName").isNull(), 
-             concat_ws(". ", lit("ERROR: Sector NULL"), col("LoadComment")))
-        .otherwise(col("LoadComment"))
+    #compute total CONST_WEIGHT per IndexId, Country, Region, and Date
+    exposure_with_region = (
+        factset_with_index
+        .join(country_region.alias("cr"), F.col("CountryID_numeric") == F.col("cr.CountryID"))
+        .join(geographic_strategy.alias("gs"), F.col("cr.RegionGeographicStrategyId") == F.col("gs.GeographicStrategyId"))
+        .join(country.alias("c"), F.col("CountryID_numeric") == F.col("c.CountryID"))
+        .select(
+            "IndexId",
+            "DATE",
+            F.col("gs.Description").alias("GeographicRegion"),
+            F.col("c.CountryName").alias("Country"),
+            "CONST_WEIGHT"
+        )
     )
-    
-    # Write updated data back to staging
-    stage_df.write.mode("overwrite").saveAsTable("dbo.IndexClassification_STAGE")
-    
-    # Move invalid rows to ERROR table
-    invalid_rows = spark.sql("""
-        SELECT 
-            ic.IndexId, ic.IndexIdentifier, ic.SecurityIdentifier,
-            ic.AsOfDate, ic.SectorCode, ic.SectorName,
-            ic.IndustryCode, ic.IndustryName,
-            ic.IndustryGrpCode, ic.IndustryGrpName,
-            ic.SubIndustryCode, ic.SubIndustryName,
-            NULL AS ClassificationPct, NULL AS CorrectionPct,
-            CURRENT_TIMESTAMP(), '{metadata['user_id']}' AS UpdateByHMCUserId,
-            ic.LoadType,
-            CONCAT('ERROR: Invalid constituent data./', 
-                   CASE WHEN ic.LoadComment IS NOT NULL THEN '. ' || ic.LoadComment ELSE '' END),
-            ic.LoadComment,
-            ic.LoadProcess, CURRENT_TIMESTAMP(), ic.LoadStartDate, ic.EventLogId, ic.VersionNum,
-            ic.IsValid, ic.IsNew, ic.IsDup, ic.Ignore
-        FROM dbo.IndexConstituent_STAGE ic
-        JOIN excludeIndex x ON COALESCE(ic.IndexId, '00000000-0000-0000-0000-000000000000') = x.IndexId
-    """)
-    
-    invalid_rows.write.mode("append").saveAsTable("dbo.IndexClassification_ERROR")
-    
-    # Move valid rows to PROCESSED table
-    good_rows = spark.sql("""
-        SELECT *
-        FROM dbo.IndexClassification_STAGE
-        WHERE IsValid = 'Y' AND Ignore = 'N'
-    """)
-    
-    good_rows.write.mode("append").saveAsTable("dbo.IndexClassification_PROCESSED")
-    
-    # Log completion
-    log_message(OBJECT_NAME, "Load Complete.")
-    
-    # Cleanup
-    spark.catalog.dropTempView("excludeIndex")
+
+    # aggregate Exposure per group
+    exposure_agg_by_date = (
+        exposure_with_region
+        .groupBy("IndexId", "GeographicRegion", "Country", "DATE")
+        .agg(F.sum("CONST_WEIGHT").alias("Exposure"))
+    )
+    exposure_agg_by_date.show()
+
+    #identify latest date per IndexId, Region, Country
+    latest_date_per_group = (
+        exposure_agg_by_date
+        .groupBy("IndexId", "GeographicRegion", "Country")
+        .agg(F.max("DATE").alias("LatestDate"))
+    )
+
+    #join to filter only the latest records
+    final_df = (
+        exposure_agg_by_date.alias("e")
+        .join(
+            latest_date_per_group.alias("l"),
+            (F.col("e.IndexId") == F.col("l.IndexId")) &
+            (F.col("e.GeographicRegion") == F.col("l.GeographicRegion")) &
+            (F.col("e.Country") == F.col("l.Country")) &
+            (F.col("e.DATE") == F.col("l.LatestDate")),
+            how="inner"
+        )
+        .select("e.IndexId", "e.GeographicRegion", "e.Country", "e.Exposure")
+    )
+
+    #optional filter by specific IndexId
+    if indexid_filter:
+        final_df = final_df.filter(F.col("IndexId") == indexid_filter)
+
+    final_df.show(10)
+    print(f"final_df count: {final_df.count()}")
+    final_df.write.format("delta").mode("overwrite").save(output_path)
+    print(f"Exposure written to: {output_path}")
+
+    #handle missing FactSet benchmark mappings
+    error_df = (
+        src_ref_index.alias("vri")
+        .join(
+            src_ref_flatten.alias("vrfc"),
+            F.lower(F.trim(F.col("vri.IndexId"))) == F.lower(F.trim(F.col("vrfc.HMCObjectMasterId")))
+        )
+        .filter(F.col("vri.IndexIdFactset").isNotNull())
+        .join(
+            factset,
+            F.col("vri.IndexIdFactset") == factset["BENCHMARK_ID"],
+            how="left_anti"
+        )
+        .selectExpr(
+            "vrfc.HMCObjectIdCrimsonX as IndexId",
+            "vri.IndexIdFactset as FactsetId",
+            "current_timestamp() as DateTime",
+            "'Factset BENCHMARK_ID not found for IndexIdFactset' as Error"
+        )
+    )
+
+    print(f"error_df count: {error_df.count()}")
+    error_df.write.format("delta").mode("overwrite").save(error_path)
+    print(f"Error written to: {error_path}")
+
 
 # METADATA ********************
 
@@ -720,63 +269,175 @@ def calc_classification():
 
 # CELL ********************
 
-def calc_class_correction(spark, metadata):
-    """
-    ETL Function: Calculate Classification Correction
-    
-    This function calculates correction factors for classification data.
-    """
-    # Initialize function-specific metadata
-    OBJECT_NAME = 'etl.HMCStaging_HMCStaging_IndexConstituent_CalcClassCorrection'
-    
-    # Create a temporary view of correction percentages
-    stage_df = spark.table("dbo.IndexClassification_STAGE")
-    
-    # Optimize DataFrame for Fabric
-    stage_df = optimize_dataframe(stage_df, ["IndexId", "AsOfDate"])
-    
-    # Calculate correction percentages
-    agg_df = stage_df.groupBy("IndexId", "AsOfDate") \
-                     .agg(F.sum("ClassificationPct").alias("TotalPct"))
-    
-    correction_df = agg_df.withColumn("CorrectionPct", F.lit(100) - F.col("TotalPct"))
-    correction_df.createOrReplaceTempView("ClassificationCorrection")
-    
-    # Reset prior correction values
-    spark.sql("""
-        UPDATE dbo.IndexClassification_STAGE
-        SET CorrectionPct = 0
-        WHERE AsOfDate >= '{metadata['load_start_date']}'
-          AND AsOfDate <= '{metadata['load_end_date']}'
-    """)
-    
-    # Apply correction to highest classification percentage
-    windowSpec = Window.partitionBy("IndexId", "AsOfDate").orderBy(F.desc("ClassificationPct"))
-    
-    # Get top classification per index/date
-    top_class_df = stage_df.withColumn("rank", F.row_number().over(windowSpec)) \
-                          .filter(F.col("rank") == 1) \
-                          .drop("rank")
-    
-    # Join with correction values
-    corrected_df = top_class_df.join(
-        correction_df,
-        ["IndexId", "AsOfDate"]
-    ).withColumn("CorrectionPct", F.col("CorrectionPct"))
-    
-    # Update staging table with corrections
-    for row in corrected_df.collect():
-        spark.sql(f"""
-            UPDATE dbo.IndexClassification_STAGE
-            SET CorrectionPct = {row['CorrectionPct']}
-            WHERE IndexId = '{row['IndexId']}'
-              AND AsOfDate = '{row['AsOfDate']}'
-              AND SectorCode = '{row['SectorCode']}'
-              AND IndustryCode = '{row['IndustryCode']}'
-        """)
-    
-    # Log completion
-    finalize_etl(OBJECT_NAME)
+generate_index_country_exposure(bronze_lh_id, silver_lh_id)
+
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
+# ## IndexRegion
+
+# CELL ********************
+
+from pyspark.sql import functions as F
+from pyspark.sql.functions import current_timestamp
+
+def generate_index_region_exposure(
+    bronze_lh_id: str,
+    silver_lh_id: str,
+    indexid_filter: str = None
+) -> None:
+    output_path = f"{silver_lh_id}/Tables/Silver/IndexRegionExposure"
+    error_path = f"{silver_lh_id}/Tables/Silver/IndexRegionExposure_Error"
+
+    # Load source tables
+    src_ref_index = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/HMCDataWarehousevwSourceReferenceIndex")
+    src_ref_flatten = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/HMCDataWarehousevwSourceReferenceFlatten_CrimsonX")\
+        .filter(F.col("HMCObjectSourceSystem") == "FACTSET")
+    factset = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/Factset")
+    country_region = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/CrimsonXCountryRegion")
+    geographic_strategy = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/CrimsonXGeographicStrategy")
+    country = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/CrimsonXCountry")
+
+    # Join FactSet with index and country
+    factset_with_index = (
+        factset.alias("fc")
+        .join(
+            src_ref_index.alias("vri"),
+            F.col("fc.BENCHMARK_ID") == F.col("vri.IndexIdFactset")
+        )
+        .join(
+            src_ref_flatten.alias("vrfc"),
+            F.lower(F.trim(F.col("vri.IndexId"))) == F.lower(F.trim(F.col("vrfc.HMCObjectMasterId")))
+        )
+        .join(
+            country.alias("c"),
+            F.col("fc.COUNTRY_RISK") == F.col("c.ISOCode2"),
+            how="left"
+        )
+        .select(
+            "fc.BENCHMARK_ID",
+            "fc.DATE",
+            "fc.CONST_WEIGHT",
+            F.col("vrfc.HMCObjectIdCrimsonX").alias("IndexId"),
+            F.col("c.CountryID").alias("CountryID_numeric")
+        )
+    )
+
+    # Join for geographic region only (omit country name)
+    exposure_with_region = (
+        factset_with_index
+        .join(country_region.alias("cr"), F.col("CountryID_numeric") == F.col("cr.CountryID"))
+        .join(geographic_strategy.alias("gs"), F.col("cr.RegionGeographicStrategyId") == F.col("gs.GeographicStrategyId"))
+        .select(
+            "IndexId",
+            "DATE",
+            F.col("gs.Description").alias("GeographicRegion"),
+            "CONST_WEIGHT"
+        )
+    )
+
+    # Aggregate by IndexId, Region, and Date
+    exposure_agg_by_date = (
+        exposure_with_region
+        .groupBy("IndexId", "GeographicRegion", "DATE")
+        .agg(F.sum("CONST_WEIGHT").alias("Exposure"))
+    )
+
+    # Get latest date per IndexId and Region
+    latest_date_per_group = (
+        exposure_agg_by_date
+        .groupBy("IndexId", "GeographicRegion")
+        .agg(F.max("DATE").alias("LatestDate"))
+    )
+
+    # Build distinct set of all IndexId-Region pairs
+    all_index_region_pairs = (
+        factset_with_index
+        .join(country_region.alias("cr"), F.col("CountryID_numeric") == F.col("cr.CountryID"))
+        .join(geographic_strategy.alias("gs"), F.col("cr.RegionGeographicStrategyId") == F.col("gs.GeographicStrategyId"))
+        .select("IndexId", F.col("gs.Description").alias("GeographicRegion"))
+        .distinct()
+    )
+
+    # Join aggregated exposure to the full set
+    exposure_with_all_combos = (
+        all_index_region_pairs.alias("all")
+        .join(
+            exposure_agg_by_date.alias("agg"),
+            (F.col("all.IndexId") == F.col("agg.IndexId")) &
+            (F.col("all.GeographicRegion") == F.col("agg.GeographicRegion")),
+            how="left"
+        )
+        .select(
+            F.col("all.IndexId"),
+            F.col("all.GeographicRegion"),
+            F.col("agg.DATE"),
+            F.coalesce(F.col("agg.Exposure"), F.lit(0.0)).alias("Exposure")
+        )
+    )
+
+    # Now get the latest date per IndexId + Region from all available dates
+    latest_date_per_group = (
+        exposure_with_all_combos
+        .groupBy("IndexId", "GeographicRegion")
+        .agg(F.max("DATE").alias("LatestDate"))
+    )
+
+    # Filter to only latest record per group
+    final_df = (
+        exposure_with_all_combos.alias("e")
+        .join(
+            latest_date_per_group.alias("l"),
+            (F.col("e.IndexId") == F.col("l.IndexId")) &
+            (F.col("e.GeographicRegion") == F.col("l.GeographicRegion")) &
+            (F.col("e.DATE") == F.col("l.LatestDate")),
+            how="inner"
+        )
+        .select("e.IndexId", "e.GeographicRegion", "e.Exposure")
+    )
+
+
+    # Optional: filter by IndexId
+    if indexid_filter:
+        final_df = final_df.filter(F.col("IndexId") == indexid_filter)
+
+    final_df.show(10)
+    print(f"final_df count: {final_df.count()}")
+    final_df.write.format("delta").mode("overwrite").save(output_path)
+    print(f"Exposure written to: {output_path}")
+
+    # Error handling (same as before)
+    error_df = (
+        src_ref_index.alias("vri")
+        .join(
+            src_ref_flatten.alias("vrfc"),
+            F.lower(F.trim(F.col("vri.IndexId"))) == F.lower(F.trim(F.col("vrfc.HMCObjectMasterId")))
+        )
+        .filter(F.col("vri.IndexIdFactset").isNotNull())
+        .join(
+            factset,
+            F.col("vri.IndexIdFactset") == factset["BENCHMARK_ID"],
+            how="left_anti"
+        )
+        .selectExpr(
+            "vrfc.HMCObjectIdCrimsonX as IndexId",
+            "vri.IndexIdFactset as FactsetId",
+            "current_timestamp() as DateTime",
+            "'Factset BENCHMARK_ID not found for IndexIdFactset' as Error"
+        )
+    )
+
+    print(f"error_df count: {error_df.count()}")
+    error_df.write.format("delta").mode("overwrite").save(error_path)
+    print(f"Error written to: {error_path}")
+
 
 # METADATA ********************
 
@@ -787,46 +448,159 @@ def calc_class_correction(spark, metadata):
 
 # CELL ********************
 
-def apply_geo_classification(spark, metadata):
-    """
-    ETL Function: Apply Geography and Classification
-    
-    This function applies the final geographic and classification data to the warehouse.
-    """
-    # Initialize function-specific metadata
-    OBJECT_NAME = 'etl.HMCStaging_DataWarehouse_IndexGeography_Apply'
-    
-    # Apply Geography
-    log_message(OBJECT_NAME, "Applying Geography data to warehouse...")
-    
-    # Get processed geography data
-    geo_df = spark.table("dbo.IndexGeography_PROCESSED") \
-                  .filter((F.col("AsOfDate") >= F.lit(metadata['load_start_date'])) &
-                          (F.col("AsOfDate") <= F.lit(metadata['load_end_date'])))
-    
-    # Optimize DataFrame for Fabric
-    geo_df = optimize_dataframe(geo_df, ["IndexId", "AsOfDate"])
-    
-    # Write to warehouse table
-    geo_df.write.mode("append").saveAsTable("HMCDataWarehouse.dbo.IndexGeography")
-    
-    # Apply Classification
-    OBJECT_NAME = 'etl.HMCStaging_DataWarehouse_IndexClassification_Apply'
-    log_message(OBJECT_NAME, "Applying Classification data to warehouse...")
-    
-    # Get processed classification data
-    class_df = spark.table("dbo.IndexClassification_PROCESSED") \
-                    .filter((F.col("AsOfDate") >= F.lit(metadata['load_start_date'])) &
-                            (F.col("AsOfDate") <= F.lit(metadata['load_end_date'])))
-    
-    # Optimize DataFrame for Fabric
-    class_df = optimize_dataframe(class_df, ["IndexId", "AsOfDate"])
-    
-    # Write to warehouse table
-    class_df.write.mode("append").saveAsTable("HMCDataWarehouse.dbo.IndexClassification")
-    
-    # Log completion
-    log_message(OBJECT_NAME, "Apply process complete.")
+generate_index_region_exposure(bronze_lh_id, silver_lh_id)
+
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
+# ## SectorIndustry
+
+# CELL ********************
+
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
+from pyspark.sql.functions import current_timestamp
+
+def generate_index_sector_industry_exposure(
+    bronze_lh_id: str,
+    silver_lh_id: str,
+    indexid_filter: str = None
+) -> None:
+    output_path = f"{silver_lh_id}/Tables/Silver/IndexSectorIndustryExposure"
+    error_path = f"{silver_lh_id}/Tables/Silver/IndexSectorIndustryExposure_Error"
+
+    #load source tables
+    src_ref_index = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/HMCDataWarehousevwSourceReferenceIndex")
+    src_ref_flatten = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/HMCDataWarehousevwSourceReferenceFlatten_CrimsonX")\
+        .filter(F.col("HMCObjectSourceSystem") == "FACTSET")
+    factset = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/Factset")
+    sector_industry_class = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/CrimsonXSectorIndustryClassification")
+    sector = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/CrimsonXSector")
+    industry = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/CrimsonXSectorIndustry")
+
+    #prepare factset
+    factset = factset.select(
+        "BENCHMARK_ID",
+        "CONST_WEIGHT",
+        "DATE",
+        F.trim(F.col("FACTSET_SECTOR_CODE").cast("string")).alias("SECTOR_CODE"),
+        F.trim(F.col("FACTSET_INDUSTRY_CODE").cast("string")).alias("INDUSTRY_CODE")
+    )
+
+    #join with sector/industry classifications
+    factset_with_class = (
+        factset.alias("fc")
+        .join(sector_industry_class.alias("sic"),
+              (F.col("fc.SECTOR_CODE") == F.col("sic.SectorCode")) &
+              (F.col("fc.INDUSTRY_CODE") == F.col("sic.IndustryCode")),
+              how="left")
+        .join(sector.alias("s"), F.col("sic.SectorCode") == F.col("s.SectorCode"), how="left")
+        .join(industry.alias("i"), F.col("sic.IndustryCode") == F.col("i.IndustryCode"), how="left")
+        .select(
+            "fc.BENCHMARK_ID",
+            "fc.CONST_WEIGHT",
+            "fc.DATE",
+            "sic.SectorIndustryClassificationId",
+            "s.SectorDescription",
+            "i.IndustryDescription"
+        )
+    )
+
+    #join with index reference
+    factset_with_indexid = (
+        factset_with_class.alias("f")
+        .join(src_ref_index.alias("vri"), F.col("f.BENCHMARK_ID") == F.col("vri.IndexIdFactset"), how="inner")
+        .join(src_ref_flatten.alias("vrfc"), F.col("vri.IndexId") == F.col("vrfc.HMCObjectMasterId"))
+        .select(
+            F.col("vrfc.HMCObjectIdCrimsonX").alias("IndexId"),
+            F.col("f.SectorDescription"),
+            F.col("f.IndustryDescription"),
+            F.col("f.CONST_WEIGHT"),
+            F.col("f.DATE")
+        )
+        .filter(
+            F.col("SectorDescription").isNotNull() &
+            F.col("IndustryDescription").isNotNull() &
+            F.col("CONST_WEIGHT").isNotNull()
+        )
+    )
+
+    #find latest DATE per IndexId + Sector + Industry
+    latest_date_df = (
+        factset_with_indexid
+        .groupBy("IndexId", "SectorDescription", "IndustryDescription")
+        .agg(F.max("DATE").alias("LatestDate"))
+    )
+
+    #join back to keep only rows with latest DATE
+    factset_latest = (
+        factset_with_indexid.alias("f")
+        .join(
+            latest_date_df.alias("ld"),
+            (F.col("f.IndexId") == F.col("ld.IndexId")) &
+            (F.col("f.SectorDescription") == F.col("ld.SectorDescription")) &
+            (F.col("f.IndustryDescription") == F.col("ld.IndustryDescription")) &
+            (F.col("f.DATE") == F.col("ld.LatestDate")),
+            how="inner"
+        )
+        .drop("LatestDate")
+    )
+
+    #aggregate Exposure
+    exposure_df = (
+        factset_latest
+        .groupBy("f.IndexId", "f.SectorDescription", "f.IndustryDescription")
+        .agg(F.sum("CONST_WEIGHT").alias("Exposure"))
+        .withColumnRenamed("SectorDescription", "Sector")
+        .withColumnRenamed("IndustryDescription", "Industry")
+    )
+
+    if indexid_filter:
+        exposure_df = exposure_df.filter(F.col("IndexId") == indexid_filter)
+
+    exposure_df.show(10)
+    print(f"Exposure output count: {exposure_df.count()}")
+    exposure_df.write.format("delta").mode("overwrite").save(output_path)
+    print(f"Exposure written to: {output_path}")
+
+    #generate error table for unmatched benchmark IDs
+    factset_raw = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/Factset")
+    error_df = (
+        src_ref_index.alias("vri")
+        .join(src_ref_flatten.alias("vrfc"), F.col("vri.IndexId") == F.col("vrfc.HMCObjectMasterId"))
+        .filter(F.col("vri.IndexIdFactset").isNotNull())
+        .join(factset_raw, F.col("vri.IndexIdFactset") == factset_raw["BENCHMARK_ID"], how="left_anti")
+        .selectExpr(
+            "vrfc.HMCObjectIdCrimsonX as IndexId",
+            "vri.IndexIdFactset as FactsetId",
+            "current_timestamp() as DateTime",
+            "'Factset BENCHMARK_ID not found for IndexIdFactset' as Error"
+        )
+    )
+
+    error_df.show(10)
+    print(f"Error output count: {error_df.count()}")
+    error_df.write.format("delta").mode("overwrite").save(error_path)
+    print(f"Error log written to: {error_path}")
+
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+generate_index_sector_industry_exposure(bronze_lh_id, silver_lh_id)
 
 # METADATA ********************
 

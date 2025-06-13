@@ -64,7 +64,12 @@
                   "referenceName": "664af2b1-1a07-97eb-4cce-36e6caa2f53a",
                   "type": "PipelineReference"
                 },
-                "parameters": {},
+                "parameters": {
+                  "TaskAuditKey": {
+                    "value": "@item().TaskAuditKey",
+                    "type": "Expression"
+                  }
+                },
                 "waitOnCompletion": true
               },
               "policy": {

@@ -22,7 +22,7 @@
 
 # CELL ********************
 
-df = spark.read.parquet("Files/INSERT Scripts/etlTask")  # Replace with actual path
+df = spark.read.parquet("Files/IncomingFeed/etltables/filetask")  # Replace with actual path
 df.show()
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
@@ -64,13 +64,17 @@ def generate_insert_script(df, table_name):
 
 # CELL ********************
 
-df = spark.read.parquet("Files/INSERT Scripts/etlTask")  # Or a table
+df = spark.read.parquet("Files/IncomingFeed/etltables/filetask")  # Or a table
 
-sql_statements = generate_insert_script(df, "etl.Task")
+sql_statements = generate_insert_script(df, "etl.FileTask")
 
 # Preview some
 for stmt in sql_statements[:5]:
     print(stmt)
+
+df = spark.read.format("csv").option("header","true").load("Files/IncomingFeed/etltables/filetask.csv")
+# df now is a Spark DataFrame containing CSV data from "Files/IncomingFeed/etltables/filetask.csv".
+display(df)
 
 # METADATA ********************
 
@@ -86,7 +90,7 @@ for stmt in sql_statements[:5]:
 from notebookutils import mssparkutils  # Only in Microsoft Fabric
 
 # Write SQL to a file in the Lakehouse Files section
-output_path = "Files/INSERT Scripts/etlTask.sql"
+output_path = "Files/INSERT Scripts/etlFileTask.sql"
 sql_content = "\n".join(sql_statements)
 
 mssparkutils.fs.put(output_path, sql_content, overwrite=True)

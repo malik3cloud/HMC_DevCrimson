@@ -68,7 +68,7 @@
               },
               "schema": [],
               "externalReferences": {
-                "connection": "@pipeline().libraryVariables.DBProdConnectionID"
+                "connection": "@variables('DBConnectionString')"
               },
               "annotations": []
             }
@@ -138,6 +138,12 @@
             "dependencyConditions": [
               "Succeeded"
             ]
+          },
+          {
+            "activity": "DBName",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
           }
         ]
       },
@@ -161,7 +167,8 @@
               },
               "type": "string"
             }
-          }
+          },
+          "sessionTag": "HCSession"
         },
         "policy": {
           "timeout": "0.12:00:00",
@@ -327,6 +334,69 @@
             ]
           }
         ]
+      },
+      {
+        "type": "Switch",
+        "typeProperties": {
+          "on": {
+            "value": "@activity('GetDatabaseTaskInfo').output.firstRow.SourceDatabaseName",
+            "type": "Expression"
+          },
+          "cases": [
+            {
+              "value": "CrimsonX",
+              "activities": [
+                {
+                  "type": "SetVariable",
+                  "typeProperties": {
+                    "variableName": "DBConnectionString",
+                    "value": {
+                      "value": "@pipeline().libraryVariables.CrimsonX",
+                      "type": "Expression"
+                    }
+                  },
+                  "policy": {
+                    "secureInput": false,
+                    "secureOutput": false
+                  },
+                  "name": "Set DBConnectionStringCrimsonX",
+                  "dependsOn": []
+                }
+              ]
+            },
+            {
+              "value": "HMCDataWarehouse",
+              "activities": [
+                {
+                  "type": "SetVariable",
+                  "typeProperties": {
+                    "variableName": "DBConnectionString",
+                    "value": {
+                      "value": "@pipeline().libraryVariables.HMCDataWarehouse",
+                      "type": "Expression"
+                    }
+                  },
+                  "policy": {
+                    "secureInput": false,
+                    "secureOutput": false
+                  },
+                  "name": "Set DBConnectionStringHMCDataWarehouse",
+                  "dependsOn": []
+                }
+              ]
+            }
+          ],
+          "defaultActivities": []
+        },
+        "name": "DBName",
+        "dependsOn": [
+          {
+            "activity": "GetDatabaseTaskInfo",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
       }
     ],
     "parameters": {
@@ -344,10 +414,20 @@
       }
     },
     "libraryVariables": {
-      "DBProdConnectionID": {
+      "CrimsonX": {
         "type": "String",
-        "variableName": "DBProdConnectionID",
+        "variableName": "CrimsonX",
         "libraryName": "Environment"
+      },
+      "HMCDataWarehouse": {
+        "type": "String",
+        "variableName": "HMCDataWarehouse",
+        "libraryName": "Environment"
+      }
+    },
+    "variables": {
+      "DBConnectionString": {
+        "type": "String"
       }
     }
   }

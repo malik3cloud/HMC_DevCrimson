@@ -193,6 +193,40 @@
                   "dependsOn": []
                 }
               ]
+            },
+            {
+              "value": "office365",
+              "activities": [
+                {
+                  "type": "ExecutePipeline",
+                  "typeProperties": {
+                    "pipeline": {
+                      "referenceName": "6d667631-f4a5-8e15-4d3e-3c9bc1f36160",
+                      "type": "PipelineReference"
+                    },
+                    "parameters": {
+                      "TaskAuditKey": {
+                        "value": "@pipeline().parameters.TaskAuditKey",
+                        "type": "Expression"
+                      },
+                      "ETLLoadDateTime": {
+                        "value": "@pipeline().parameters.EtlLoadDateTime",
+                        "type": "Expression"
+                      },
+                      "TaskKey": {
+                        "value": "@pipeline().parameters.TaskKey",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true
+                  },
+                  "policy": {
+                    "secureInput": false
+                  },
+                  "name": "pl_office365",
+                  "dependsOn": []
+                }
+              ]
             }
           ],
           "defaultActivities": [
@@ -400,6 +434,9 @@
         "type": "String"
       },
       "TaskKey": {
+        "type": "String"
+      },
+      "DBConnectionString": {
         "type": "String"
       }
     }

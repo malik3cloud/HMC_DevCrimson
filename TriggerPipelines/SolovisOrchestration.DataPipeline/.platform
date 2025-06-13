@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "SolovisOrchestration"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "04f925f7-1223-8649-48bf-a85437f0e114"
+  }
+}

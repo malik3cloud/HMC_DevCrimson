@@ -21,6 +21,8 @@ from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 from typing import Optional, List, Dict, Any, Union
+from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.functions import coalesce, lit, col
 
 
 def get_spark_session() -> SparkSession:
@@ -150,15 +152,27 @@ def add_metadata_columns(
         .withColumn("UpdateByHMCUserId", F.lit(metadata["user_id"]))
 
 
-def get_invalid_indices(spark: SparkSession, stage_table:str) -> DataFrame:
-    """Get invalid index IDs from the constituent stage table"""
-    invalid_index_df = spark.sql(f"""
-        SELECT DISTINCT(COALESCE(IndexId, '00000000-0000-0000-0000-000000000000')) AS IndexId
-        FROM {stage_table}
-        WHERE IsValid = 'N'
-    """)
+
+
+def get_invalid_indices(spark: SparkSession, stage_table_path: str) -> DataFrame:
+    """Get invalid index IDs from the parquet file at stage_table_path"""
+    
+    # Read the parquet file
+    df = spark.read.parquet(stage_table_path)
+    
+    # Filter invalid records and select distinct IndexId with coalesce
+
+
+    invalid_index_df = df.filter(col("IsValid") == 'N') \
+                     .select(coalesce(col("IndexId"), lit('00000000-0000-0000-0000-000000000000')).alias("IndexId")) \
+                     .distinct()
+
+    
+    # Register temp view if needed for further SQL queries
     invalid_index_df.createOrReplaceTempView("excludeIndex")
+    
     return invalid_index_df
+
 
 
 def write_to_tables(

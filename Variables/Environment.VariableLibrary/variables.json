@@ -20,7 +20,7 @@
       "value": "a54b02f3-2c8f-4c89-8578-6caae282fd91"
     },
     {
-      "name": "WokspaceID",
+      "name": "WorkspaceID",
       "note": "",
       "type": "String",
       "value": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
@@ -42,6 +42,18 @@
       "note": "",
       "type": "String",
       "value": "e9fc4e80-ff69-4d45-bbdd-892592889465"
+    },
+    {
+      "name": "HMCDataWarehouse",
+      "note": "",
+      "type": "String",
+      "value": "eba37d20-2e32-449b-bb60-4b0b3c4aa3c8"
+    },
+    {
+      "name": "CrimsonX",
+      "note": "",
+      "type": "String",
+      "value": "355469f3-c2c9-46ff-b971-134188715489"
     }
   ]
 }

@@ -1,0 +1,164 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "typeProperties": {
+              "schema": "etl",
+              "table": "Notebook"
+            },
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "LookupNotebook",
+        "dependsOn": []
+      },
+      {
+        "type": "TridentNotebook",
+        "typeProperties": {
+          "notebookId": "fd29ecef-3c6c-81fa-453d-43634bdab4da",
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "parameters": {
+            "TaskList": {
+              "value": {
+                "value": "@string(activity('GetTaskInfo').output.value)",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "NotebookList": {
+              "value": {
+                "value": "@string(activity('LookupNotebook').output.value)",
+                "type": "Expression"
+              },
+              "type": "string"
+            }
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "CallTransformations",
+        "dependsOn": [
+          {
+            "activity": "LookupNotebook",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
+            "activity": "GetTaskInfo",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderQuery": {
+              "value": "@concat('Select * from etl.Task where TaskKey =',pipeline().parameters.TaskKey)",
+              "type": "Expression"
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "typeProperties": {
+              "schema": "etl",
+              "table": "Notebook"
+            },
+            "schema": [],
+            "linkedService": {
+              "name": "etlControl",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
+                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "GetTaskInfo",
+        "dependsOn": []
+      }
+    ],
+    "parameters": {
+      "TaskKey": {
+        "type": "string"
+      }
+    },
+    "libraryVariables": {
+      "curatedlhid": {
+        "type": "String",
+        "variableName": "CuratedLakehouseID",
+        "libraryName": "Environment"
+      },
+      "bronzelhid": {
+        "type": "String",
+        "variableName": "BronzeLakehouseID",
+        "libraryName": "Environment"
+      },
+      "rawlhid": {
+        "type": "String",
+        "variableName": "RawLakehouseID",
+        "libraryName": "Environment"
+      },
+      "workspaceid": {
+        "type": "String",
+        "variableName": "WorkspaceID",
+        "libraryName": "Environment"
+      }
+    }
+  }
+}
