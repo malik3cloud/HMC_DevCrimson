@@ -21,13 +21,6 @@
               },
               "type": "string"
             },
-            "GlobalConfig": {
-              "value": {
-                "value": "@string(activity('GetGlobalConfig').output.value)",
-                "type": "Expression"
-              },
-              "type": "string"
-            },
             "BronzeLhId": {
               "value": {
                 "value": "@pipeline().libraryVariables.bronzelhid",
@@ -63,14 +56,7 @@
           "secureOutput": false
         },
         "name": "RunTaskNotebook",
-        "dependsOn": [
-          {
-            "activity": "GetGlobalConfig",
-            "dependencyConditions": [
-              "Succeeded"
-            ]
-          }
-        ]
+        "dependsOn": []
       },
       {
         "type": "SetVariable",
@@ -176,44 +162,6 @@
             ]
           }
         ]
-      },
-      {
-        "type": "Lookup",
-        "typeProperties": {
-          "source": {
-            "type": "DataWarehouseSource",
-            "sqlReaderQuery": "Select * from etl.GlobalConfig",
-            "partitionOption": "None",
-            "queryTimeout": "02:00:00"
-          },
-          "datasetSettings": {
-            "type": "DataWarehouseTable",
-            "schema": [],
-            "linkedService": {
-              "name": "etlControl",
-              "properties": {
-                "type": "DataWarehouse",
-                "typeProperties": {
-                  "artifactId": "95db441c-1821-4183-bb87-3c23cd7a9253",
-                  "endpoint": "ocjf6obnn2vujauxalhsb7ixzy-xbpfgmyhjw6etm5fzsi5hktm5u.datawarehouse.fabric.microsoft.com",
-                  "workspaceId": "33535eb8-4d07-49bc-b3a5-cc91d3aa6ced"
-                },
-                "annotations": []
-              }
-            },
-            "annotations": []
-          },
-          "firstRowOnly": false
-        },
-        "policy": {
-          "timeout": "0.12:00:00",
-          "retry": 0,
-          "retryIntervalInSeconds": 30,
-          "secureInput": false,
-          "secureOutput": false
-        },
-        "name": "GetGlobalConfig",
-        "dependsOn": []
       }
     ],
     "parameters": {

@@ -32,7 +32,6 @@ import json
 import os
 from pyspark.sql import SparkSession
 from py4j.java_gateway import java_import
-
 # ------------------------------------------
 # Setup Spark
 # ------------------------------------------
@@ -201,36 +200,55 @@ detailed_df = detailed_df \
 # ------------------------------------------
 # 6. Join with Metadata and Write Output
 # ------------------------------------------
+# Initialize Spark session
+spark = SparkSession.builder.getOrCreate()
+sc = spark.sparkContext
+
+# Define paths
+base_path = "Files/IncomingFeed/CyberSecurityDashboard/KnowBe4"
+output_path = f"{base_path}/output"
+final_filename = "knowbe4_data.parquet"
+
+# Initialize Hadoop FileSystem
+hadoop_conf = sc._jsc.hadoopConfiguration()
+fs = sc._jvm.org.apache.hadoop.fs.FileSystem.get(hadoop_conf)
+
+# Java imports for Path
+java_import(sc._jvm, "org.apache.hadoop.fs.Path")
+
+# Define Path objects
+output_path_obj = sc._jvm.Path(output_path)
+final_file_path = sc._jvm.Path(f"{base_path}/{final_filename}")
+
+# Delete existing temporary output directory if it exists
+if fs.exists(output_path_obj):
+    fs.delete(output_path_obj, True)
+
+# Join detailed_df with test_df and add ETLLoadDateTime column
 final_df = detailed_df.join(
     test_df.drop("template_name", "started_at_ts"), 
     on="pst_id", 
     how="inner"
 )
-final_df = final_df.withColumn("pst_id", lit("1234567"))
-base_path = "Files/IncomingFeed/CyberSecurityDashboard/KnowBe4"
-temp_path = f"{base_path}/tmp_output"
-final_filename = "knowbe4_data.parquet"
-final_df = final_df.withColumn("ETLLoadDateTime", current_timestamp())
-final_df.coalesce(1).write.mode("overwrite").parquet(temp_path)
 
-spark = SparkSession.builder.getOrCreate()
-sc = spark.sparkContext
-hadoop_conf = sc._jsc.hadoopConfiguration()
-fs = sc._jvm.org.apache.hadoop.fs.FileSystem.get(hadoop_conf)
-src_path = sc._jvm.org.apache.hadoop.fs.Path(temp_path)
-dst_path = sc._jvm.org.apache.hadoop.fs.Path(f"{base_path}/{final_filename}")
+# Write DataFrame to temporary output directory
+final_df.coalesce(1).write.mode("overwrite").parquet(output_path)
 
-# Locate the actual .parquet file
-file_status = fs.listStatus(src_path)
+# Delete existing final file if it exists
+if fs.exists(final_file_path):
+    fs.delete(final_file_path, False)
+
+# Rename the part file to the final filename
+file_status = fs.listStatus(output_path_obj)
 for f in file_status:
     name = f.getPath().getName()
     if name.endswith(".parquet"):
         part_file = f.getPath()
-        fs.rename(part_file, dst_path)
+        fs.rename(part_file, final_file_path)
         break
 
-# Clean up temp directory
-fs.delete(src_path, True)
+# Delete the temporary output directory
+fs.delete(output_path_obj, True)
 
 # ------------------------------------------
 # 7. Log API usage

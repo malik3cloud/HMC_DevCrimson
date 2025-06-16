@@ -88,7 +88,7 @@ RawLhId= ''
 # Convert JSON String to list
 tasklist = [json.loads(TaskList)]
 # watermarklist = json.loads(WatermarkList)
-guidlist = json.loads(GlobalConfig)
+# guidlist = json.loads(GlobalConfig)
 
 # METADATA ********************
 
@@ -218,7 +218,6 @@ def process_task(task, etlloadtime):
             if not hwm_column_raw or str(hwm_column_raw).strip().upper() == "NULL"
             else hwm_column_raw
         )
-        print(f"[debug] TaskKey {task['TaskKey']}: Raw SinkWatermarkColumn = '{hwm_column_raw}', Using = '{hwm_column}'")
         primary_column = task['PrimaryKeyColumnList']
         method = task['SinkLoadMethod']
         # hwm_value = next((item["HighWatermarkValue"] for item in watermarklist if item["TaskKey"] == task["TaskKey"]), None)
@@ -236,23 +235,24 @@ def process_task(task, etlloadtime):
 
         RowsRead = df_source.count()
 
-        # Determine primary keys: if primary_column is None, use all columns as primary keys
+        #determine primary keys: if primary_column is None, use all columns as primary keys
         if not primary_column or str(primary_column).strip().upper() == "NULL":
             primary_keys = df_source.columns  # all columns
             print('No primary column')
         else:
             primary_keys = [col.strip() for col in (primary_column.split(",") if isinstance(primary_column, str) else primary_column)]
-            print('checkpoint')
 
 
         # Deduplicate based on the primary keys
         df_source = df_source.dropDuplicates(primary_keys)
         print(f"[debug] Columns after reading and dedup: {df_source.columns}")
 
+        #create temporary view
         df_source.createOrReplaceTempView("df_source_view")
+        spark.catalog.cacheTable("df_source_view")
 
 
-        # Skip processing if source table is empty
+        #skip processing if source table is empty
         if df_source.rdd.isEmpty():
             print(f"\n Source table {source_path} is empty. Skipping TaskKey: {task['TaskKey']}.")
             RowsRead = 0
@@ -260,7 +260,6 @@ def process_task(task, etlloadtime):
             RowsUpdated = 0
             RowsDeleted = 0
             return {
-                "SourcePath": source_path,
                 "RowsRead": RowsRead,
                 "RowsInserted": RowsInserted,
                 "RowsUpdated": RowsUpdated,
@@ -363,7 +362,6 @@ def process_task(task, etlloadtime):
             RowsDeleted = 0
             print(f"\n [✓] COMPLETE MergeSchema: TaskKey {task['SinkTableName']}")
             return {
-                "SourcePath": source_path,
                 "RowsRead": RowsRead,
                 "RowsInserted": RowsInserted,
                 "RowsUpdated": RowsUpdated,
@@ -440,7 +438,7 @@ def process_task(task, etlloadtime):
         df_target = spark.read.format("delta").load(target_path)
 
         # Apply reverse column renaming to DataFrame
-        df_restored = restore_original_column_names(df_target, rename_map)
+        # df_restored = restore_original_column_names(df_target, rename_map)
 
         # Get the latest commit history
         history_df_audit = delta_table.history(1)  # Get last operation only
@@ -453,12 +451,10 @@ def process_task(task, etlloadtime):
 
         
         # Overwrite the cleaned DataFrame
-        print("restore")
         # df_restored.write.format("delta").mode("overwrite").save(target_path)
 
         print(f"\n [✓] COMPLETE Merge: TaskKey {task['SinkTableName']}")
         return {
-            "SourcePath": source_path,
             "RowsRead": RowsRead,
             "RowsInserted": RowsInserted,
             "RowsUpdated": RowsUpdated,
@@ -466,20 +462,7 @@ def process_task(task, etlloadtime):
         }
 
     except Exception as e:
-        error_message = str(e)[:400]
-        print(f"\n ERROR: TaskKey {task['TaskKey']} failed: {error_message}")
-        RowsRead = 0
-        RowsInserted = 0
-        RowsUpdated = 0
-        RowsDeleted = 0
-        return {
-            "SourcePath": None,
-            "RowsRead": RowsRead,
-            "RowsInserted": RowsInserted,
-            "RowsUpdated": RowsUpdated,
-            "RowsDeleted": RowsDeleted
-        }
-        raise Exception
+        raise RuntimeError(f"Task {task['TaskKey']} failed: {str(e)}") from e
 
 
 
@@ -498,7 +481,6 @@ def get_guid_value(key):
         print(f"Missing GUID for key: {key}")
     return value
 
-loaded_files = []
 
 for task_item in tasklist:
     try:
@@ -515,9 +497,8 @@ for task_item in tasklist:
         result = process_task(task_item, etlloadtime)
 
     except Exception as e:
-        
         print(f"Error processing task: {e}")
-        raise Exception
+        raise
 
 
 # METADATA ********************
@@ -576,8 +557,6 @@ def move_to_archive(file_path):
 
         # Delete the original after confirming copy
         mssparkutils.fs.rm(file_path, recurse=False)
-
-
         print(f"File moved successfully to: {destination_path}")
     except Exception as e:
         print(f"Error occurred while moving file: {e}")
@@ -591,14 +570,6 @@ def move_to_archive(file_path):
 # META }
 
 # CELL ********************
-
-# result = {
-#     "RowsCopied": rows_copied,
-#     "RowsInserted": rows_inserted,
-#     "RowsUpdated": rows_updated,
-#     "RowsDeleted": rows_deleted
-# }
-# notebookutils.notebook.exit(str(result))
 
 result = {
     "RowsCopied": result["RowsRead"],

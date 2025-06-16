@@ -14,7 +14,7 @@
           "secureInput": false
         },
         "typeProperties": {
-          "storedProcedureName": "[etl].[JobAuditFailure]",
+          "storedProcedureName": "[etl].[TaskAuditFailure]",
           "storedProcedureParameters": {
             "Message": {
               "value": {

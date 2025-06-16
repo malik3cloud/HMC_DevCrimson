@@ -113,7 +113,7 @@ FROM   lh_bronze.Bronze.SolovisTransactions st
 WHERE  (si.AssetClassGia LIKE 'HMC Internal%')
 			and   NOT(si.AssetClassGia LIKE 'HMC Internal%Offset%' OR si.AssetClassGia LIKE 'HMC Internal%Fin. Costs%' or si.AssetClassGia like 'HMC Internal - SUS (Notional Adj)' or si.AssetClassGia = 'HMC Internal - SUS (Fin. Costs)')
 		AND    sc.IsDefault = 1
-		AND st.ExposureDate < DATEADD(DAY, -1, CURRENT_TIMESTAMP)
+--		AND st.ExposureDate < CURRENT_TIMESTAMP
 UNION ALL
 SELECT si.AssetClassGia
 	, si.ResourceId InvestmentResourceId
@@ -142,7 +142,8 @@ FROM   lh_bronze.Bronze.SolovisTransactions st
 WHERE  (si.AssetClassGia = 'HMC Internal - SUS (Fin. Costs)' 
 			or si.AssetClassGia = 'HMC Internal - SUS (Notional Adj)')
 		AND    sc.IsDefault = 1
-		AND st.ExposureDate < DATEADD(DAY, -1, CURRENT_TIMESTAMP)""")
+--		AND st.ExposureDate < CURRENT_TIMESTAMP
+		""")
 
 dfGeneralExpenses =  spark.sql("""SELECT si.AssetClassGia
 	, si.ResourceId InvestmentResourceId
@@ -171,7 +172,8 @@ FROM   lh_bronze.Bronze.SolovisTransactions st
 			JOIN lh_bronze.Bronze.CrimsonXCurrency c ON c.ISOCode = scur.Code
 WHERE  se.Label = 'General Expense - Absolute Return'
 		AND    sc.IsDefault = 1
-		AND st.ExposureDate < DATEADD(DAY, -1, CURRENT_TIMESTAMP)""")
+--		AND st.ExposureDate < CURRENT_TIMESTAMP
+		""")
 
 dfExternalActiveBook =  spark.sql("""SELECT si.AssetClassGia
 	, si.ResourceId InvestmentResourceId
@@ -201,7 +203,8 @@ FROM   lh_bronze.Bronze.SolovisTransactions st
 		JOIN lh_bronze.Bronze.CrimsonXFund f ON UPPER(f.FundId) = UPPER(xref.FundIdCrimsonX)
 		JOIN lh_bronze.Bronze.HMCDataWarehouseSolovisCurrency scur ON scur.Id = si.LocalCurrencyId
 		JOIN lh_bronze.Bronze.CrimsonXCurrency c ON c.ISOCode = scur.Code
-WHERE st.ExposureDate < DATEADD(DAY, -1, CURRENT_TIMESTAMP)""")
+--WHERE st.ExposureDate < CURRENT_TIMESTAMP
+""")
 
 dfCashOffset =  spark.sql("""SELECT si.AssetClassGia
 	, si.ResourceId InvestmentResourceId
@@ -228,7 +231,8 @@ FROM   lh_bronze.Bronze.SolovisTransactions st
 		JOIN lh_bronze.Bronze.CrimsonXCurrency c ON c.ISOCode = scur.Code
 WHERE  (si.AssetClassGia LIKE 'HMC Internal%Offset%' OR si.AssetClassGia LIKE 'HMC Internal%Fin. Costs%')
 		AND NOT si.AssetClassGia = 'HMC Internal - SUS (Fin. Costs)'
-		AND st.ExposureDate < DATEADD(DAY, -1, CURRENT_TIMESTAMP)""")
+--		AND st.ExposureDate < CURRENT_TIMESTAMP
+		""")
 
 dfCashAccounts = getCashAccounts()
 dfCashAccounts.createOrReplaceTempView("CashTags")
@@ -269,7 +273,7 @@ WHERE
 		)
 		AND ct.TagDescription != 'HMC Internal - SUS (Fin. Costs)'
 	)
-	AND st.ExposureDate < DATEADD(DAY, -1, CURRENT_TIMESTAMP)
+--	AND st.ExposureDate < CURRENT_TIMESTAMP
 """)
 
 dfFunds =  spark.sql("""SELECT si.AssetClassGia
@@ -299,7 +303,8 @@ FROM lh_bronze.Bronze.SolovisTransactions st
 																		AND xf.HMCObjectType = 'Fund'
 		JOIN lh_bronze.Bronze.HMCDataWarehouseSolovisCurrency scur ON scur.Id = st.CurrencyId
 		JOIN lh_bronze.Bronze.CrimsonXCurrency c ON c.ISOCode = scur.Code
-WHERE st.ExposureDate < DATEADD(DAY, -1, CURRENT_TIMESTAMP)""")
+--WHERE CONVERT(DATETIME, st.ExposureDate) < CURRENT_TIMESTAMP
+""")
 
 # METADATA ********************
 
@@ -314,7 +319,6 @@ WHERE st.ExposureDate < DATEADD(DAY, -1, CURRENT_TIMESTAMP)""")
 # Perform data type conversions and defaults for nulls
 from pyspark.sql import functions as F
 from pyspark.sql.types import DecimalType, IntegerType, DateType, BooleanType
-# , DateType, StringType, IntegerType, LongType
 
 dfTransactions = dfInternalActiveBook \
 	.union(dfGeneralExpenses) \
@@ -330,15 +334,28 @@ dfTransactions = dfTransactions \
     .withColumn("InvestmentId", col("InvestmentId").cast(IntegerType())) \
     .withColumn("CurrencyId", col("CurrencyId").cast(IntegerType())) \
     .withColumn("RecallableAmount", F.coalesce(col("RecallableAmount").cast(DecimalType(38,2)), F.lit(0))) \
-    .withColumn("ExposureDate", col("ExposureDate").cast(DateType())) \
-    .withColumn("TradeDate", col("TradeDate").cast(DateType())) \
-    .withColumn("SettleDate", col("SettleDate").cast(DateType())) \
+    .withColumn("ExposureDate", F.to_date(col("ExposureDate"), "M/d/yyyy")) \
+    .withColumn("TradeDate", F.to_date(col("TradeDate"), "M/d/yyyy")) \
+    .withColumn("SettleDate", F.to_date(col("SettleDate"), "M/d/yyyy")) \
     .withColumn("TransactionTypeTagId", col("TransactionTypeTagId").cast(IntegerType())) \
     .withColumn("ImpactsCommitment", col("ImpactsCommitment").cast(BooleanType())) \
     .withColumn("IsAdjustment", col("IsAdjustment").cast(BooleanType())) \
     .withColumn("IsInternalFlow", col("IsInternalFlow").cast(BooleanType())) \
     .withColumn("IsStartOfDay", col("IsStartOfDay").cast(BooleanType())) \
     .withColumn("IsStock", col("IsStock").cast(BooleanType()))
+
+# Filter by t-1 to only include everything prior to today because we know it was validated
+dfTransactions = dfTransactions \
+    .filter(col("ExposureDate") < date.today())
+
+# Get fundstructure for the fund
+dfFundStructure = spark.sql("""SELECT upper(f.FundId) FundId
+	                                    , fs.Description FundStructure
+                                FROM lh_bronze.Bronze.CrimsonXFund f
+		                        JOIN lh_bronze.Bronze.CrimsonXFundStructure fs ON f.FundStructureId = fs.FundStructureId""")
+
+dfTransactions = dfTransactions \
+    .join(dfFundStructure, "FundId", "inner")
 
 # METADATA ********************
 
@@ -365,17 +382,14 @@ dfCashflows = dfCashflows \
                 & (F.col("AmountIn") != 0) \
                 & (F.col("RecallableAmount") != 0), F.col("RecallableAmount")).otherwise(0)) \
     .withColumn("MarketValueEffetLocal", F.when((F.col("ImpactsValuation") == 1), F.col("AmountIn") - F.col("AmountOut")).otherwise(0)) \
-    .withColumn("UnfundedAdjustmentLocal", F.when((F.col("CashFlowTransactionTypeId") == 18), F.col("RecallableAmount")).otherwise(0))
-
-.withColumn("CommitmentEffectLocal",PSql.when((PSql.col("FundStructure").isin ("Drawdown","Hybrid")) & (~PSql.col("CashFlowTransactionTypeID").isin (5,13,18)) , ( (((PSql.col("AmountIn") - PSql.col("AmountOut"))*-1) * PSql.col("ImpactsCommitmentInt") )- (PSql.col("RecallableAmount")) ))
-                                           .when((PSql.col("FundStructure").isin ("Drawdown","Hybrid"))  & (PSql.col("CashFlowTransactionTypeID").isin (5,13)) , ( (((PSql.col("AmountIn") - PSql.col("AmountOut"))*-1) * PSql.col("ImpactsCommitmentInt") )- (PSql.col("RecallableAmount")) ))      
-                                           .when( (PSql.col("CashFlowTransactionTypeID").isin (18)) , 0.00 )                                                 
-                                           .otherwise(0.00) )
-
-           
-
-display(dfCashflows)
-
+    .withColumn("UnfundedAdjustmentLocal", F.when((F.col("CashFlowTransactionTypeId") == 18), F.col("RecallableAmount")).otherwise(0)) \
+    .withColumn("CommitmentEffectLocal", \
+                F.when((col("CashFlowTransactionTypeId") == 18), 0)
+                .when(((col("FundStructure").isin("Drawdown","Hybrid")) 
+                            & (col("ImpactsCommitment") & (col("UseCommitmentImpact") == F.lit(1)))), 
+                        F.when((~col("CashFlowTransactionTypeId").isin(5,13,18)), col("AmountIn") - col("AmountOut") - col("RecallableAmount"))
+                        .when((col("CashFlowTransactionTypeId").isin(5,13)), col("AmountIn") - col("AmountOut") - col("RecallableAmount"))
+                        .otherwise(0)) .otherwise(0))
 
 # METADATA ********************
 

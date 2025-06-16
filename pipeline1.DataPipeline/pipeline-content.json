@@ -1,0 +1,588 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Copy",
+        "typeProperties": {
+          "source": {
+            "type": "ParquetSource",
+            "storeSettings": {
+              "type": "LakehouseReadSettings",
+              "recursive": true,
+              "enablePartitionDiscovery": false
+            },
+            "formatSettings": {
+              "type": "ParquetReadSettings"
+            },
+            "datasetSettings": {
+              "type": "Parquet",
+              "typeProperties": {
+                "location": {
+                  "type": "LakehouseLocation",
+                  "folderPath": "IncomingFeed/CyberSecurityDashboard/KnowBe4",
+                  "fileName": "knowbe4_data.parquet"
+                },
+                "compressionCodec": "snappy"
+              },
+              "schema": [],
+              "linkedService": {
+                "name": "lh_raw",
+                "properties": {
+                  "type": "Lakehouse",
+                  "typeProperties": {
+                    "artifactId": "a57e9e3f-d7ba-a2a3-4013-7104920a12cc",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                    "rootFolder": "Files"
+                  },
+                  "annotations": []
+                }
+              },
+              "annotations": []
+            }
+          },
+          "sink": {
+            "type": "LakehouseTableSink",
+            "tableActionOption": "OverwriteSchema",
+            "partitionOption": "None",
+            "datasetSettings": {
+              "type": "LakehouseTable",
+              "typeProperties": {
+                "schema": "Bronze",
+                "table": "KnowBe4PhishingTest"
+              },
+              "schema": [],
+              "linkedService": {
+                "name": "lh_bronze",
+                "properties": {
+                  "type": "Lakehouse",
+                  "typeProperties": {
+                    "artifactId": "572c6558-2a70-8c5f-466d-5da213ef97da",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                    "rootFolder": "Tables"
+                  },
+                  "annotations": []
+                }
+              },
+              "annotations": []
+            }
+          },
+          "translator": {
+            "type": "TabularTranslator",
+            "mappings": [
+              {
+                "source": {
+                  "name": "pst_id",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "pst_id",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "recipient_id",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "recipient_id",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "scheduled_at",
+                  "type": "DateTime",
+                  "physicalType": "TIMESTAMP_MICROS"
+                },
+                "sink": {
+                  "name": "scheduled_at",
+                  "physicalType": "timestamp"
+                }
+              },
+              {
+                "source": {
+                  "name": "delivered_at",
+                  "type": "DateTime",
+                  "physicalType": "TIMESTAMP_MICROS"
+                },
+                "sink": {
+                  "name": "delivered_at",
+                  "physicalType": "timestamp"
+                }
+              },
+              {
+                "source": {
+                  "name": "opened_at",
+                  "type": "DateTime",
+                  "physicalType": "TIMESTAMP_MICROS"
+                },
+                "sink": {
+                  "name": "opened_at",
+                  "physicalType": "timestamp"
+                }
+              },
+              {
+                "source": {
+                  "name": "clicked_at",
+                  "type": "DateTime",
+                  "physicalType": "TIMESTAMP_MICROS"
+                },
+                "sink": {
+                  "name": "clicked_at",
+                  "physicalType": "timestamp"
+                }
+              },
+              {
+                "source": {
+                  "name": "replied_at",
+                  "type": "DateTime",
+                  "physicalType": "TIMESTAMP_MICROS"
+                },
+                "sink": {
+                  "name": "replied_at",
+                  "physicalType": "timestamp"
+                }
+              },
+              {
+                "source": {
+                  "name": "attachment_opened_at",
+                  "type": "DateTime",
+                  "physicalType": "TIMESTAMP_MICROS"
+                },
+                "sink": {
+                  "name": "attachment_opened_at",
+                  "physicalType": "timestamp"
+                }
+              },
+              {
+                "source": {
+                  "name": "macro_enabled_at",
+                  "type": "DateTime",
+                  "physicalType": "TIMESTAMP_MICROS"
+                },
+                "sink": {
+                  "name": "macro_enabled_at",
+                  "physicalType": "timestamp"
+                }
+              },
+              {
+                "source": {
+                  "name": "data_entered_at",
+                  "type": "DateTime",
+                  "physicalType": "TIMESTAMP_MICROS"
+                },
+                "sink": {
+                  "name": "data_entered_at",
+                  "physicalType": "timestamp"
+                }
+              },
+              {
+                "source": {
+                  "name": "qr_code_scanned",
+                  "type": "DateTime",
+                  "physicalType": "TIMESTAMP_MICROS"
+                },
+                "sink": {
+                  "name": "qr_code_scanned",
+                  "physicalType": "timestamp"
+                }
+              },
+              {
+                "source": {
+                  "name": "reported_at",
+                  "type": "DateTime",
+                  "physicalType": "TIMESTAMP_MICROS"
+                },
+                "sink": {
+                  "name": "reported_at",
+                  "physicalType": "timestamp"
+                }
+              },
+              {
+                "source": {
+                  "name": "bounced_at",
+                  "type": "DateTime",
+                  "physicalType": "TIMESTAMP_MICROS"
+                },
+                "sink": {
+                  "name": "bounced_at",
+                  "physicalType": "timestamp"
+                }
+              },
+              {
+                "source": {
+                  "name": "ip",
+                  "type": "String",
+                  "physicalType": "STRING"
+                },
+                "sink": {
+                  "name": "ip",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "ip_location",
+                  "type": "String",
+                  "physicalType": "STRING"
+                },
+                "sink": {
+                  "name": "ip_location",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "browser",
+                  "type": "String",
+                  "physicalType": "STRING"
+                },
+                "sink": {
+                  "name": "browser",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "browser_version",
+                  "type": "String",
+                  "physicalType": "STRING"
+                },
+                "sink": {
+                  "name": "browser_version",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "os",
+                  "type": "String",
+                  "physicalType": "STRING"
+                },
+                "sink": {
+                  "name": "os",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "user_id",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "user_id",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "user_first_name",
+                  "type": "String",
+                  "physicalType": "STRING"
+                },
+                "sink": {
+                  "name": "user_first_name",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "user_last_name",
+                  "type": "String",
+                  "physicalType": "STRING"
+                },
+                "sink": {
+                  "name": "user_last_name",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "user_email",
+                  "type": "String",
+                  "physicalType": "STRING"
+                },
+                "sink": {
+                  "name": "user_email",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "template_id",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "template_id",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "template_name",
+                  "type": "String",
+                  "physicalType": "STRING"
+                },
+                "sink": {
+                  "name": "template_name",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "campaign_id",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "campaign_id",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "status",
+                  "type": "String",
+                  "physicalType": "STRING"
+                },
+                "sink": {
+                  "name": "status",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "name",
+                  "type": "String",
+                  "physicalType": "STRING"
+                },
+                "sink": {
+                  "name": "name",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "groups",
+                  "type": "String",
+                  "physicalType": "STRING"
+                },
+                "sink": {
+                  "name": "groups",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "phish_prone_percentage",
+                  "type": "Double",
+                  "physicalType": "DOUBLE"
+                },
+                "sink": {
+                  "name": "phish_prone_percentage",
+                  "physicalType": "double"
+                }
+              },
+              {
+                "source": {
+                  "name": "started_at",
+                  "type": "String",
+                  "physicalType": "STRING"
+                },
+                "sink": {
+                  "name": "started_at",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "duration",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "duration",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "categories",
+                  "type": "String",
+                  "physicalType": "STRING"
+                },
+                "sink": {
+                  "name": "categories",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "scheduled_count",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "scheduled_count",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "delivered_count",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "delivered_count",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "opened_count",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "opened_count",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "clicked_count",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "clicked_count",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "replied_count",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "replied_count",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "attachment_open_count",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "attachment_open_count",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "macro_enabled_count",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "macro_enabled_count",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "data_entered_count",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "data_entered_count",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "qr_code_scanned_count",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "qr_code_scanned_count",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "reported_count",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "reported_count",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "bounced_count",
+                  "type": "Int64",
+                  "physicalType": "INT64"
+                },
+                "sink": {
+                  "name": "bounced_count",
+                  "physicalType": "long"
+                }
+              },
+              {
+                "source": {
+                  "name": "landing_page_name",
+                  "type": "String",
+                  "physicalType": "STRING"
+                },
+                "sink": {
+                  "name": "landing_page_name",
+                  "physicalType": "string"
+                }
+              },
+              {
+                "source": {
+                  "name": "ETLLoadDateTime",
+                  "type": "DateTime",
+                  "physicalType": "TIMESTAMP_MICROS"
+                },
+                "sink": {
+                  "name": "ETLLoadDateTime",
+                  "physicalType": "timestamp"
+                }
+              }
+            ],
+            "typeConversion": true,
+            "typeConversionSettings": {
+              "allowDataTruncation": true,
+              "treatBooleanAsNumber": false
+            }
+          },
+          "enableStaging": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Copy_d68",
+        "dependsOn": []
+      }
+    ]
+  }
+}

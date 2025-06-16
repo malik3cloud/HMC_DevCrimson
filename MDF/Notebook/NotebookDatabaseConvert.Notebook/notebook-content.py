@@ -56,20 +56,6 @@ GlobalConfig = ''
 
 # CELL ********************
 
-# # This cell is generated from runtime parameters. Learn more: https://go.microsoft.com/fwlink/?linkid=2161015
-# GlobalConfig = "[{\"ConfigKey\":\"SPJobAuditStartLock\",\"ConfigValue\":\"0\"},{\"ConfigKey\":\"BronzeLakehouseId\",\"ConfigValue\":\"13ef97da-5da2-466d-8c5f-2a70572c6558\"},{\"ConfigKey\":\"Dev - Crimson\",\"ConfigValue\":\"33535eb8-4d07-49bc-b3a5-cc91d3aa6ced\"},{\"ConfigKey\":\"RawLakehouseId\",\"ConfigValue\":\"920a12cc-7104-4013-a2a3-d7baa57e9e3f\"}]"
-# TaskList = "[{\"TaskKey\":8,\"TaskRunOrderNbr\":1,\"JobKey\":5,\"ParentSourceName\":\"Database\",\"SourceName\":\"Database\",\"SourceType\":\"sqlserver\",\"TaskName\":\"FundTradeApproval\",\"TaskType\":\"DatabaseTask\",\"SinkLoadMethod\":\"overwrite\",\"PrimaryKeyColumnList\":null,\"IsWatermarkEnabledFlag\":false,\"SourceWatermarkColumn\":null,\"SinkWatermarkColumn\":\"ETLLoadDateTime\",\"SourceWorkspaceName\":\"Dev - Crimson\",\"SourceLakehouseName\":null,\"SourceWarehouseName\":null,\"SourceDatabaseName\":\"SQLServer_CrimsonX\",\"SourceSchemaName\":\"dbo\",\"SourceTableName\":\"FundTradeApproval\",\"SinkWorkspaceName\":\"Dev - Crimosn\",\"SinkWorkspaceId\":null,\"SinkLakehouseName\":\"lh_bronze\",\"SinkLakehouseId\":null,\"SinkWarehouseName\":null,\"SinkSchemaName\":null,\"SinkTableName\":\"FundTradeStatus\",\"SourceFlatfileConnectionSettings\":null,\"NotebookKey\":null,\"RawStoragePath\":\"rawtest\",\"RawStorageFileName\":\"FundTradeApproval\",\"ArchiveOriginalFilesFlag\":true,\"ArchiveStoragePath\":null,\"ArchiveStorageFileName\":null,\"IsActiveFlag\":true,\"SourceExtractionMethod\":null,\"OverrideQuery\":null,\"SourceWhereClause\":null}]"
-
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
 # Convert JSON String to list
 tasklist = json.loads(TaskList)
 guidlist = json.loads(GlobalConfig)
@@ -125,34 +111,49 @@ from notebookutils import mssparkutils
 
 
 def process_task(task):
-    source_file = f"{raw_lh_basepath}/Files/{task['RawStoragePath']}/{task['RawStorageFileName']}.parquet"
-    print(f"Reading from: {source_file}")
+    try:
+        folder_base = f"{raw_lh_basepath}/Files/{task['RawStoragePath']}/{task['RawStorageFileName']}"
+        file_path = folder_base + ".parquet"
 
-    target_path = f"{raw_lh_basepath}/Files/{task['RawStoragePath']}/{task['RawStorageFileName']}"
-
-    df = spark.read.parquet(source_file)
-
-
-    binary_columns = [f.name for f in df.schema.fields if f.dataType.simpleString() == "binary"]
-    print("Binary columns detected:", binary_columns)
-
-    for col_name in binary_columns:
-        if col_name.lower().endswith("id"):
-            df = df.withColumn(col_name, binary_to_guid_udf(col(col_name)))
-            print('id column')
+        # Check if .parquet file exists
+        if mssparkutils.fs.exists(file_path):
+            source_file = file_path
+            print(f"Reading from file: {source_file}")
+        # Else check if folder exists
+        elif mssparkutils.fs.exists(folder_base):
+            source_file = folder_base
+            print(f"Reading from folder: {source_file}")
         else:
-            # Other binary column
-            df = df.withColumn(col_name, hex(col(col_name)))
+            raise RuntimeError(f"Neither file nor folder found for task {task['TaskKey']}:\n  - {file_path}\n  - {folder_base}")
+
+        # Set target path (write as a folder)
+        target_path = folder_base
+
+        df = spark.read.parquet(source_file)
 
 
-    for col_name in df.columns:
-        if col_name.lower().endswith("id"):
-            df = df.withColumn(col_name, upper(col(col_name)))
+        binary_columns = [f.name for f in df.schema.fields if f.dataType.simpleString() == "binary"]
+        print("Binary columns detected:", binary_columns)
 
-    df.show(5, truncate=False)
-    df.write.mode("overwrite").parquet(target_path)
+        for col_name in binary_columns:
+            if col_name.lower().endswith("id"):
+                df = df.withColumn(col_name, binary_to_guid_udf(col(col_name)))
+                print('id column')
+            else:
+                # Other binary column
+                df = df.withColumn(col_name, hex(col(col_name)))
 
-    print(f"Converted Parquet saved to {target_path}")
+
+        # for col_name in df.columns:
+        #     if col_name.lower().endswith("id"):
+        #         df = df.withColumn(col_name, upper(col(col_name)))
+
+        df.show(5, truncate=False)
+        df.write.mode("overwrite").parquet(target_path)
+
+        print(f"Converted Parquet saved to {target_path}")
+    except Exception as e:
+        raise RuntimeError(f"Task {task['TaskKey']} failed: {str(e)}") from e
 
 
 # METADATA ********************
@@ -208,9 +209,8 @@ for task_item in tasklist:
         result = process_task(task_item)
 
     except Exception as e:
-        
         print(f"Error processing task: {e}")
-        raise Exception
+        raise
     
 
 # METADATA ********************

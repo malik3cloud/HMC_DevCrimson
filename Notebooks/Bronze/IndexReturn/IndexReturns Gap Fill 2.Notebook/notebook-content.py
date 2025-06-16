@@ -44,17 +44,55 @@
 
 from pyspark.sql import SparkSession
 from datetime import date
-
-#xxx columns = ["IndexId", "FrequencyId", "AsOfDate", "CurrencyId", "IndexLevel", "IndexReturn"]
+from pyspark.sql.functions import col, lit, to_date, trim
 
 base_path = "Files/IndexReturn"
 filename = "BloombergIndexReturn"
 full_path = f"{base_path}/{filename}"
 
-df22 = spark.read.parquet(full_path)
-df22.show(100)
+# xxx todo: need to process "Status" column here and flag any non-zero values
+# xxx todo: also need to flag any blank Date or Level values which can occur
+# xxx todo: in both cases, filter out bad rows and report issue
 
+df_stage = spark.read.parquet(full_path)
 
+#xxx flag/report/purvue these issues
+df_issues = df_stage.filter(
+    (col("Status") != 0) |
+    (col("Date").isNull()) &
+    (trim(col("Date")) == "") &
+    (col("Level").isNull()) &
+    (trim(col("Level").cast("string")) == "")
+)
+df_issues.show(2)
+
+#xxx need to test this filter
+df_stage = df_stage.filter(
+    (col("Status") == 0) &
+    (col("Date").isNotNull()) &
+    (trim(col("Date")) != "") &
+    (col("Level").isNotNull()) &
+    (trim(col("Level").cast("string")) != "")
+)
+df_stage.show(2)
+
+#xxx need to convert from ISO currency code to HMC INT ID
+#xxx also BB ticker to HMC GUID
+#xxx and look up at HMC to get index Frequency (we only fill gaps for 8/Daily).  also get LEVEL/RETURN based and/or other metadata
+df_stage = df_stage.select(
+    col("SecurityIdentifier").alias("IndexId"),
+    lit(8).alias("FrequencyId"),
+    to_date(col("Date"), "yyyyMMdd").alias("AsOfDate"),
+    col("Currency").alias("CurrencyId"),
+    col("Level").alias("IndexLevel"),
+    lit(0).alias("IndexReturn"),
+    col("RunReason"),
+    col("Guid"),
+    col("AdditionalParam")
+)
+
+# Preview the result
+df_stage.show(truncate=False)
 
 #xxx df.write.mode("append").saveAsTable("STAGE_IndexReturnBloomberg")
 
@@ -76,7 +114,7 @@ from pyspark.sql.window import Window
 # df_version = spark.table("util.Version")
 # df_index = spark.table("dbo.Index")
 
-#xxx hardcode Daily
+# hardcode Daily: we only fill gaps for 8/Daily
 frequency_id = 8 
 
 # ------------------------------------------------------------------
@@ -114,7 +152,7 @@ window_spec = Window.partitionBy("IndexId", "FrequencyId", "CurrencyId").orderBy
 df_date_list = (
     df_stage
     .filter(
-        (col("FrequencyId") == frequency_id)
+        (col("FrequencyId") == frequency_id) # xxx todo: handle all frequencies
         #(col("IsValid") == "Y") &
         #(col("Ignore") == "N") 
         #(expr("ISNULL(x.RunPurpose, '--')") != "NIGHTLY_INDEX_LOAD_SOIL")
@@ -193,9 +231,15 @@ plug_rows = gaps \
         col("MissingDate").cast("date").alias("AsOfDate"),
         col("gaps.CurrencyId"),
         col("IndexLevel"),
-        lit(0).alias("IndexReturn")
+        lit(0).alias("IndexReturn"),
+        col("RunReason"),
+        col("Guid"),
+        col("AdditionalParam")
         #lit("PLUG").alias("ReturnSource")
     )
+
+plug_rows.show(20)
+stage.show(20)
 
 df_union = stage.union(plug_rows).orderBy("IndexId", "CurrencyId", "FrequencyId", "AsOfDate")
 

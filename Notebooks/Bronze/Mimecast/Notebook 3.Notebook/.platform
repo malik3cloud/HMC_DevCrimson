@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
   "metadata": {
     "type": "Notebook",
-    "displayName": "NotebookLoadRawToBronzeTaskForJeffTest",
+    "displayName": "Notebook 3",
     "description": "New notebook"
   },
   "config": {
     "version": "2.0",
-    "logicalId": "c1b98cac-d90b-884e-4c7b-71e666da7b42"
+    "logicalId": "dc7d3f1d-104a-8cc7-4cb3-1659f895776e"
   }
 }

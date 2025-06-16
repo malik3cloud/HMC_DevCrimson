@@ -79,23 +79,12 @@ spark.conf.set("spark.databricks.delta.schema.autoMerge.enabled", "true")
 # META   "language_group": "synapse_pyspark"
 # META }
 
-# CELL ********************
-
-print(test_utils())
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
 # PARAMETERS CELL ********************
 
 # Build this from standard nbs
 bronze_lh_id = 'abfss://33535eb8-4d07-49bc-b3a5-cc91d3aa6ced@onelake.dfs.fabric.microsoft.com/13ef97da-5da2-466d-8c5f-2a70572c6558'
 silver_lh_id = 'abfss://33535eb8-4d07-49bc-b3a5-cc91d3aa6ced@onelake.dfs.fabric.microsoft.com/e9fc4e80-ff69-4d45-bbdd-892592889465'
-ic_stage_path = f"{bronze_lh_id}/Files/IndexConstituent_STAGE.parquet"
+# ic_stage_path = f"{bronze_lh_id}/Files/IndexConstituent_STAGE.parquet"
 
 # METADATA ********************
 
@@ -128,8 +117,12 @@ def generate_index_country_exposure(
 
     #load source tables
     src_ref_index = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/HMCDataWarehousevwSourceReferenceIndex")
-    src_ref_flatten = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/HMCDataWarehousevwSourceReferenceFlatten_CrimsonX")\
-        .filter(F.col("HMCObjectSourceSystem") == "FACTSET")
+    src_ref_flatten = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/HMCDataWarehousevwSourceReferenceFlatten_CrimsonX") \
+        .filter(
+            (F.col("HMCObjectSourceSystem") == "FACTSET") &
+            (F.col("HMCObjectStatus") == "Active")
+        )
+
     factset = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/Factset")
     country_region = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/CrimsonXCountryRegion")
     geographic_strategy = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/CrimsonXGeographicStrategy")
@@ -194,6 +187,8 @@ def generate_index_country_exposure(
             F.col("c.CountryName").alias("Country"),
             "CONST_WEIGHT"
         )
+        # Deduplication step
+        .dropDuplicates(["IndexId", "GeographicRegion", "Country", "DATE", "CONST_WEIGHT"])
     )
 
     # aggregate Exposure per group
@@ -299,7 +294,10 @@ def generate_index_region_exposure(
     # Load source tables
     src_ref_index = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/HMCDataWarehousevwSourceReferenceIndex")
     src_ref_flatten = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/HMCDataWarehousevwSourceReferenceFlatten_CrimsonX")\
-        .filter(F.col("HMCObjectSourceSystem") == "FACTSET")
+        .filter(
+            (F.col("HMCObjectSourceSystem") == "FACTSET") &
+            (F.col("HMCObjectStatus") == "Active")
+        )
     factset = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/Factset")
     country_region = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/CrimsonXCountryRegion")
     geographic_strategy = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/CrimsonXGeographicStrategy")
@@ -340,7 +338,9 @@ def generate_index_region_exposure(
             "DATE",
             F.col("gs.Description").alias("GeographicRegion"),
             "CONST_WEIGHT"
-        )
+        )       
+        # Deduplication step
+        .dropDuplicates(["IndexId", "GeographicRegion", "DATE", "CONST_WEIGHT"])
     )
 
     # Aggregate by IndexId, Region, and Date
@@ -479,7 +479,10 @@ def generate_index_sector_industry_exposure(
     #load source tables
     src_ref_index = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/HMCDataWarehousevwSourceReferenceIndex")
     src_ref_flatten = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/HMCDataWarehousevwSourceReferenceFlatten_CrimsonX")\
-        .filter(F.col("HMCObjectSourceSystem") == "FACTSET")
+        .filter(
+            (F.col("HMCObjectSourceSystem") == "FACTSET") &
+            (F.col("HMCObjectStatus") == "Active")
+        )
     factset = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/Factset")
     sector_industry_class = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/CrimsonXSectorIndustryClassification")
     sector = spark.read.format("delta").load(f"{bronze_lh_id}/Tables/Bronze/CrimsonXSector")

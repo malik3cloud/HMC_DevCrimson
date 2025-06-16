@@ -322,10 +322,19 @@
         "type": "ExecutePipeline",
         "typeProperties": {
           "pipeline": {
-            "referenceName": "cede3ad2-78f0-9668-4faa-623cb2adbefa",
+            "referenceName": "d27342c0-58ae-b5f6-44da-7109b0b8bc03",
             "type": "PipelineReference"
           },
-          "parameters": {},
+          "parameters": {
+            "TaskAuditKey": {
+              "value": "@pipeline().parameters.TaskAuditKey",
+              "type": "Expression"
+            },
+            "ErrorMessage": {
+              "value": "@activity('CaseTaskType').error.message\r\n",
+              "type": "Expression"
+            }
+          },
           "waitOnCompletion": true
         },
         "policy": {

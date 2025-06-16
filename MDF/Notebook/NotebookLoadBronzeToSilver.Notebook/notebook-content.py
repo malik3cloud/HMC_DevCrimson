@@ -121,6 +121,7 @@ def get_basepath(
     lakehouse_id
 ) -> str:
     lh_basepath = f"abfss://{workspace_id}@onelake.dfs.fabric.microsoft.com/{lakehouse_id}"
+  
     return lh_basepath
 
 # METADATA ********************
@@ -260,7 +261,6 @@ def process_task(task, etlloadtime, watermarklist):
         #     df_source = df_source.filter(f"{watermark_col} > '{hwm_value}'")
 
 
-
         # Skip processing if source table is empty
         if df_source.rdd.isEmpty():
             print(f"\n Source table {source_path} is empty. Skipping TaskKey: {task['TaskKey']}.")
@@ -269,7 +269,6 @@ def process_task(task, etlloadtime, watermarklist):
             RowsUpdated = 0
             RowsDeleted = 0
             return {
-                "SourcePath": source_path,
                 "RowsRead": RowsRead,
                 "RowsInserted": RowsInserted,
                 "RowsUpdated": RowsUpdated,
@@ -285,8 +284,6 @@ def process_task(task, etlloadtime, watermarklist):
             table_exists = False
 
         RowsRead = df_source.count()  # Count total rows in source
-
-        
 
         if not table_exists:
             print(f"\nTarget table does not exist. Creating it at: {target_path}")
@@ -309,6 +306,7 @@ def process_task(task, etlloadtime, watermarklist):
             }
 
         elif method == 'overwrite':
+            
             print(f"\nOverwriting existing table at: {target_path}")
             if hwm_column not in df_source.columns:
                 try:
@@ -373,7 +371,7 @@ def process_task(task, etlloadtime, watermarklist):
             RowsDeleted = 0
             print(f"\n [✓] COMPLETE MergeSchema: TaskKey {task['SinkTableName']}")
             return {
-                "SourcePath": source_path,
+              #  "SourcePath": source_path,
                 "RowsRead": RowsRead,
                 "RowsInserted": RowsInserted,
                 "RowsUpdated": RowsUpdated,
@@ -462,7 +460,7 @@ def process_task(task, etlloadtime, watermarklist):
         df_target = spark.read.format("delta").load(target_path)
 
         # Apply reverse column renaming to DataFrame
-        df_restored = restore_original_column_names(df_target, rename_map)
+        # df_restored = restore_original_column_names(df_target, rename_map)
 
         # Get the latest commit history
         history_df_audit = delta_table.history(1)  # Get last operation only
@@ -480,7 +478,7 @@ def process_task(task, etlloadtime, watermarklist):
 
         print(f"\n [✓] COMPLETE Merge: TaskKey {task['SinkTableName']}")
         return {
-            "SourcePath": source_path,
+        #    "SourcePath": source_path,
             "RowsRead": RowsRead,
             "RowsInserted": RowsInserted,
             "RowsUpdated": RowsUpdated,
@@ -488,20 +486,7 @@ def process_task(task, etlloadtime, watermarklist):
         }
 
     except Exception as e:
-        error_message = str(e)[:400]
-        print(f"\n ERROR: TaskKey {task['TaskKey']} failed: {error_message}")
-        RowsRead = 0
-        RowsInserted = 0
-        RowsUpdated = 0
-        RowsDeleted = 0
-        return {
-            "SourcePath": None,
-            "RowsRead": RowsRead,
-            "RowsInserted": RowsInserted,
-            "RowsUpdated": RowsUpdated,
-            "RowsDeleted": RowsDeleted
-        }
-        raise Exception
+        raise RuntimeError(f"Task {task['TaskKey']} failed: {str(e)}") from e
 
 
 
@@ -524,7 +509,6 @@ loaded_files = []
 
 for task_item in tasklist:
     try:
-
         # Skip if any required ID is missing
         if not all([BronzeLhId, CuratedLhId, WorkspaceId]):
             print("Skipping due to missing required GUID(s)")
@@ -534,12 +518,13 @@ for task_item in tasklist:
         bronze_lh_basepath = get_basepath(WorkspaceId, BronzeLhId)
         silver_lh_basepath = get_basepath(WorkspaceId, CuratedLhId)
 
+        print (silver_lh_basepath)
+
         # Process the task
         result = process_task(task_item, etlloadtime, watermarklist)
-        loaded_file = result["SourcePath"] if result else None
+
 
     except Exception as e:
-        
         print(f"Error processing task: {e}")
         raise Exception
 
@@ -612,13 +597,13 @@ for task_item in tasklist:
 
 # CELL ********************
 
-from notebookutils import fs 
-for item_file in loaded_files:
-    print(item_file)
-    if item_file is not None:
-        move_to_archive(item_file)
-    else:
-        print("Skipped: item_file is None.")
+# from notebookutils import fs 
+# for item_file in loaded_files:
+#     print(item_file)
+#     if item_file is not None:
+#         move_to_archive(item_file)
+#     else:
+#         print("Skipped: item_file is None.")
 
 # METADATA ********************
 
@@ -636,41 +621,6 @@ audit_result = {
     "RowsDeleted": result['RowsDeleted']
 }
 notebookutils.notebook.exit(str(audit_result))
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-# from mssparkutils.fs import cp, exists
-
-# def copy_abfss_file(source_path: str, destination_path: str):
-#     """
-#     Copies a file from one ABFSS path to another.
-    
-#     Parameters:
-#         source_path (str): The source ABFSS path (e.g., "abfss://<container_name>@<storage_account_name>.dfs.core.windows.net/<file_path>").
-#         destination_path (str): The destination ABFSS path (e.g., "abfss://<container_name>@<storage_account_name>.dfs.core.windows.net/<new_file_path>").
-#     """
-    
-#     # Check if the source file exists
-#     if exists(source_path):
-#         # Perform the copy operation
-#         cp(source_path, destination_path)
-#         print(f"[✓] File copied from {source_path} to {destination_path}")
-#     else:
-#         print(f"[❗] Source file does not exist: {source_path}")
-
-# # Example usage
-# source_path = "abfss://33535eb8-4d07-49bc-b3a5-cc91d3aa6ced@onelake.dfs.fabric.microsoft.com/2c080a33-8d2c-4c79-9dec-e1e74d700242/Files/01Test"
-# destination_path = "abfss://33535eb8-4d07-49bc-b3a5-cc91d3aa6ced@onelake.dfs.fabric.microsoft.com/bd682b0f-5772-451c-9de9-3c412bddbd53/Files/01Test"
-
-# copy_abfss_file(source_path, destination_path)
-
 
 # METADATA ********************
 

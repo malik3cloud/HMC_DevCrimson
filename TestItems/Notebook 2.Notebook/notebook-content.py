@@ -1170,3 +1170,69 @@ log_event_end(
 # META   "language": "python",
 # META   "language_group": "synapse_pyspark"
 # META }
+
+# CELL ********************
+
+
+
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+from pyspark.sql.functions import col, concat_ws
+import requests
+import json
+import os
+
+secret_value = mssparkutils.credentials.getSecret('https://kv-dc1dev-adf.vault.azure.net/', 'BearerTokenAPI')
+
+# ------------------------------------------
+# 0. Fetch JSON from KnowBe4 API and save
+# ------------------------------------------
+
+# API config
+base_url = "https://us.api.knowbe4.com/v1/users"
+bearer_token = secret_value
+
+headers = {
+    "Authorization": f"Bearer {bearer_token}",
+    "Accept": "application/json"
+}
+params = {
+    "page": 1,
+    "per_page": 500
+}
+
+all_users = []
+while True:
+    response = requests.get(base_url, headers=headers, params=params)
+    response.raise_for_status()
+
+    users_page = response.json()
+    if not users_page:
+        break
+
+    print(f"Fetched {len(users_page)} users on page {params['page']}")
+    for user in users_page:
+        print(user)  # Print each user
+
+    all_users.extend(users_page)
+
+    if len(users_page) < params["per_page"]:
+        break  # No more pages
+    params["page"] += 1
+
+
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
